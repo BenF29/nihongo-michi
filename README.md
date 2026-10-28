@@ -18,6 +18,15 @@ Aplicación web interactiva para aprender japonés desde cero, en español.
 
 En la app, la sección [Cómo funciona](https://benf29.github.io/nihongo-michi/#/metodo) explica la metodología y sus referencias.
 
+## Voces
+
+Los audios de pronunciación se generaron con [VOICEVOX](https://voicevox.hiroshiba.jp/): **VOICEVOX:冥鳴ひまり** y **VOICEVOX:玄野武宏**. Para regenerarlos después de cambiar el contenido:
+
+```sh
+docker run -d --rm --name voicevox -p 127.0.0.1:50021:50021 voicevox/voicevox_engine:cpu-latest
+node tools/gen-audio.mjs   # crea solo los que faltan y borra los que ya no se usan
+```
+
 ## Desarrollo
 
 Es un sitio estático, sin dependencias ni paso de compilación (HTML, CSS y módulos de JavaScript).

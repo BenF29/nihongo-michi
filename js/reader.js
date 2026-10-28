@@ -82,7 +82,7 @@ export function renderReading(root, id) {
       ${r.paras.map(p => `<p>${p.map(([j, es]) => `<span class="sent" data-g="${gi++}"><span class="sj">${jp(j, { mark: 'known' })}</span><button class="sp-say" data-say="${esc(spoken(j))}" aria-label="Escuchar oración">🔈</button><span class="str">${rich(es)}</span></span>`).join(' ')}</p>`).join('')}
     </article>
     ${c.unknown.length ? `<details class="newwords"><summary>Palabras nuevas en este texto (${c.unknown.length})</summary>
-      <div class="nwlist">${c.unknown.map(e => `<div class="nw">${jp(e.w)} <span class="muted">${esc(e.r)}</span> — ${esc(e.es)}</div>`).join('')}</div>
+      <div class="nwlist">${c.unknown.map(e => `<div class="nw">${jp(`${e.w}=${e.id}`)} <span class="muted">${esc(e.r)}</span> — ${esc(e.es)}</div>`).join('')}</div>
       <button class="btn sm" id="addAll">+ Añadir todas a mi repaso</button></details>` : ''}
     <section class="questions">
       <h2>Preguntas de comprensión</h2>

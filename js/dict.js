@@ -170,6 +170,42 @@ export function normRomaji(s) {
 // Lectura completa (en hiragana) de un texto tokenizado, para comparar respuestas
 export const textReading = toks => toks.filter(t => !t.punct).map(t => t.reading || t.surface).join('');
 
+// ───── Texto a pronunciar ─────
+// Lo que se envía al sintetizador. Se usa igual en la app y en tools/gen-audio.mjs,
+// así cada texto corresponde a un archivo de audio pregenerado.
+const PRT_SAY = { 'は': 'わ', 'へ': 'え', 'を': 'お' };
+export function tokSay(t, alone = false) {
+  if (t.blank) return '';
+  if (t.punct) return t.surface;
+  if (alone && t.entry?.pos === 'prt' && PRT_SAY[t.surface]) return PRT_SAY[t.surface];
+  if (t.raw?.includes('|')) return t.reading;
+  // un kanji suelto tiene lecturas ambiguas (人: ひと/にん): mejor la lectura en kana
+  if (t.reading && t.surface.length === 1 && hasKanji(t.surface)) return t.reading;
+  return t.surface;
+}
+export function spoken(text) {
+  const ts = tokenize(text);
+  const alone = ts.filter(t => !t.punct && !t.blank).length === 1;
+  return ts.map(t => tokSay(t, alone)).join('').replace(/^[。、！？]+/, '');
+}
+export const sayWord = e => spoken(`${e.w}=${e.id}`);
+
+// Hash estable (cyrb53) para nombrar los archivos de audio
+export function audioKey(text, voice = 'f') {
+  const str = voice + '|' + text;
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+// Personajes con voz masculina en los diálogos
+export const MALE = new Set(['ケン', 'はると', 'ルイス', '田中', 'お父さん', '父', '兄', '弟', '店員', 'おじいさん']);
+export const voiceOf = who => MALE.has(who) ? 'm' : 'f';
+
 // Clave de palabra para seguimiento (los nombres propios y la puntuación no cuentan)
 export function wordKey(tok) {
   if (!tok || tok.punct || tok.blank || !tok.entry) return null;

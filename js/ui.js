@@ -1,6 +1,7 @@
 // Utilidades de interfaz: texto japonés clicable, ventana de significado, avisos y sonidos.
 
-import { tokenize, rubyParts, hasKanji, toRomaji, kanjiIn, ENTRIES, lookup } from './dict.js';
+import { tokenize, rubyParts, hasKanji, toRomaji, kanjiIn, ENTRIES, lookup, spoken, tokSay } from './dict.js';
+export { spoken };
 import { KANJI } from './data/kanji.js';
 import { LESSONS } from './data/curriculum.js';
 import * as S from './state.js';
@@ -48,14 +49,9 @@ export function jp(text, { cls = '', plain = false, mark = 'none', blank = '' } 
     const id = t.entry?.id || '';
     let st = '';
     if (mark !== 'none' && t.entry && t.entry.pos !== 'name') st = S.isKnown(id) ? '' : ' new';
-    return `<span class="w${st}" tabindex="0" data-id="${esc(id)}" data-s="${esc(t.surface)}" data-r="${esc(t.reading)}" data-l="${esc(t.label)}">${inner}</span>`;
+    return `<span class="w${st}" tabindex="0" data-id="${esc(id)}" data-s="${esc(t.surface)}" data-r="${esc(t.reading)}" data-l="${esc(t.label)}" data-v="${esc(tokSay(t, true))}">${inner}</span>`;
   });
   return `<span class="jp${spacing ? ' sp' : ''} ${cls}" lang="ja">${out.join('')}</span>`;
-}
-
-// Texto para el sintetizador de voz
-export function spoken(text) {
-  return tokenize(text).map(t => t.blank ? '' : (t.reading && /\|/.test(t.raw)) ? t.reading : t.surface).join('');
 }
 
 // Marcado ligero para explicaciones: **negrita**, *cursiva*, {japonés}, saltos de línea
@@ -66,8 +62,11 @@ export function rich(s) {
     esc(p).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>').replace(/\n/g, '<br>')).join('');
 }
 
-export function audioBtn(text, label = '') {
-  return `<button class="audio" data-say="${esc(spoken(text))}" aria-label="Escuchar">🔊${label ? ' ' + esc(label) : ''}</button>`;
+// Botón de audio para texto japonés tokenizado (voice: 'f' | 'm')
+export const audioBtn = (text, label = '', voice = 'f') => sayBtn(spoken(text), label, voice);
+// Botón de audio para un texto ya listo para pronunciar
+export function sayBtn(say, label = '', voice = 'f') {
+  return `<button class="audio" data-say="${esc(say)}" data-voice="${voice}" aria-label="Escuchar">🔊${label ? ' ' + esc(label) : ''}</button>`;
 }
 
 // ───── Ventana de significado ─────
@@ -95,7 +94,7 @@ function showWord(el) {
     else if (known) status = '<span class="tag ok">✓ ya la aprendiste</span>';
     else status = `<span class="tag new">nueva</span>${wl ? ` <span class="muted small">se enseña en «${esc(wl.l.title)}»</span>` : ''} <button class="btn sm" data-addword="${esc(e.id)}">+ Añadir a repaso</button>`;
     pop.innerHTML = `
-      <div class="pop-head"><div class="pop-w" lang="ja">${ruby}</div>${audioBtn(reading || surface)}</div>
+      <div class="pop-head"><div class="pop-w" lang="ja">${ruby}</div>${sayBtn(el.dataset.v)}</div>
       ${hasKanji(surface) || /[゠-ヿ]/.test(surface) ? `<div class="pop-r" lang="ja">${esc(reading)}</div>` : ''}
       ${S.settings().romaji ? `<div class="pop-ro">${esc(romajiOf(e, reading))}</div>` : ''}
       <div class="pop-es">${esc(e.es)}</div>
@@ -110,12 +109,12 @@ function showWord(el) {
   let x = r.left + r.width / 2 - pw / 2; x = Math.max(8, Math.min(x, innerWidth - pw - 8));
   let y = r.bottom + 8; if (y + ph > innerHeight - 8) y = Math.max(8, r.top - ph - 8);
   pop.style.left = x + 'px'; pop.style.top = y + 'px';
-  if (S.settings().sound !== false && e) speak(reading || surface, S.settings().rate);
+  if (S.settings().sound !== false && e) speak(el.dataset.v, S.settings().rate);
 }
 
 document.addEventListener('click', ev => {
   const say = ev.target.closest('[data-say]');
-  if (say) { ev.stopPropagation(); speak(say.dataset.say, S.settings().rate); return; }
+  if (say) { ev.stopPropagation(); speak(say.dataset.say, S.settings().rate, say.dataset.voice); return; }
   const add = ev.target.closest('[data-addword]');
   if (add) { S.addWordToReview(add.dataset.addword); toast('Añadida a tu repaso'); closePop(); document.dispatchEvent(new CustomEvent('words-changed')); return; }
   const w = ev.target.closest('.w');

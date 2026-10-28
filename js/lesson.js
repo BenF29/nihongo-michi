@@ -9,10 +9,10 @@ import { LESSONS, LESSON_INDEX, UNITS } from './data/curriculum.js';
 import { STEPS } from './data/lessons/index.js';
 import { KANA, splitKana } from './data/kana.js';
 import { KANJI } from './data/kanji.js';
-import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana } from './dict.js';
+import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf } from './dict.js';
 import * as S from './state.js';
 import { speak, stopSpeaking } from './tts.js';
-import { esc, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, spoken, sfx, confetti, POS, romajiOf, closePop } from './ui.js';
+import { esc, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, sayBtn, spoken, sfx, confetti, POS, romajiOf, closePop } from './ui.js';
 
 // ───── Conjuntos de referencia según el currículo ─────
 const wordsUpTo = (() => {
@@ -46,19 +46,19 @@ const wordHtml = (e, big) => jp(e.w === e.r || /[゠-ヿ]/.test(e.w) ? e.r : e.w
 
 function qJpToEs(e, pool, srs) {
   const ds = distractors(e, pool, 3, 'es');
-  return { kind: 'choice', srs, prompt: `<div class="qlabel">¿Qué significa?</div><div class="qjp">${wordHtml(e, true)} ${audioBtn(e.r)}</div>`,
-    say: e.r, opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: esc(x.es) })), answer: e.id,
+  return { kind: 'choice', srs, prompt: `<div class="qlabel">¿Qué significa?</div><div class="qjp">${wordHtml(e, true)} ${sayBtn(sayWord(e))}</div>`,
+    say: sayWord(e), opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: esc(x.es) })), answer: e.id,
     why: `${esc(e.w)}${e.w !== e.r ? ` (${esc(e.r)})` : ''} = <b>${esc(e.es)}</b>` };
 }
 function qEsToJp(e, pool, srs) {
   const ds = distractors(e, pool, 3, 'r');
   return { kind: 'choice', srs, prompt: `<div class="qlabel">¿Cómo se dice?</div><div class="qes">«${esc(e.es)}»</div>`,
-    opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: wordHtml(x), say: x.r })), answer: e.id,
-    why: `«${esc(e.es)}» = <span lang="ja">${esc(e.w)}</span>${e.w !== e.r ? ` (${esc(e.r)})` : ''}`, after: e.r };
+    opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: wordHtml(x), say: sayWord(x) })), answer: e.id,
+    why: `«${esc(e.es)}» = <span lang="ja">${esc(e.w)}</span>${e.w !== e.r ? ` (${esc(e.r)})` : ''}`, after: sayWord(e) };
 }
 function qListenWord(e, pool, srs) {
   const ds = distractors(e, pool, 3, 'es');
-  return { kind: 'choice', srs, listen: e.r, prompt: `<div class="qlabel">Escucha y elige el significado</div>${listenBox(e.r)}`,
+  return { kind: 'choice', srs, listen: sayWord(e), prompt: `<div class="qlabel">Escucha y elige el significado</div>${listenBox(sayWord(e))}`,
     opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: esc(x.es) })), answer: e.id,
     why: `Era <span lang="ja">${esc(e.w)}</span> (${esc(e.r)}) = <b>${esc(e.es)}</b>` };
 }
@@ -183,7 +183,7 @@ function buildLessonQueue(lesson) {
     }
     if (s.t === 'auto') {
       const n = s.n || 6;
-      if (!matched && newE.length >= 4) { matched = true; q.push(qMatch(pick(newE, Math.min(5, newE.length)).map(e => [e.w === e.r || /[゠-ヿ]/.test(e.w) ? e.r : e.w, e.es, e.r]))); }
+      if (!matched && newE.length >= 4) { matched = true; q.push(qMatch(pick(newE, Math.min(5, newE.length)).map(e => [e.w === e.r || /[゠-ヿ]/.test(e.w) ? e.r : e.w, e.es, sayWord(e)]))); }
       const review = reviewCandidates(prior, 3);
       const gens = [qEsToJp, qListenWord, qJpToEs];
       let ni = 0, ri = 0;
@@ -413,16 +413,16 @@ const RENDER = {
       const side = names.indexOf(who) % 2 ? 'r' : 'l';
       const div = document.createElement('div');
       div.className = 'line ' + side;
-      div.innerHTML = `<div class="av" title="${esc(who)}">${av[names.indexOf(who) % av.length]}</div><div class="bubble"><div class="who">${esc(who)}</div>${jp(j, { cls: 'mid' })} ${audioBtn(j)}<div class="tr hidden">${rich(es)}</div><button class="show-tr" aria-label="Ver traducción">ES</button></div>`;
+      div.innerHTML = `<div class="av" title="${esc(who)}">${av[names.indexOf(who) % av.length]}</div><div class="bubble"><div class="who">${esc(who)}</div>${jp(j, { cls: 'mid' })} ${audioBtn(j, '', voiceOf(who))}<div class="tr hidden">${rich(es)}</div><button class="show-tr" aria-label="Ver traducción">ES</button></div>`;
       box.appendChild(div);
       $('.show-tr', div).onclick = () => $('.tr', div).classList.toggle('hidden');
-      if (S.settings().sound !== false) speak(spoken(j), S.settings().rate);
+      if (S.settings().sound !== false) speak(spoken(j), S.settings().rate, voiceOf(who));
       shown++;
       div.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     };
     addLine();
     $('.tr-all', body).onclick = () => $$('.tr', box).forEach(t => t.classList.remove('hidden'));
-    $('.play-all', body).onclick = async () => { for (const l of s.lines.slice(0, shown)) await speak(spoken(l[1]), S.settings().rate); };
+    $('.play-all', body).onclick = async () => { for (const l of s.lines.slice(0, shown)) await speak(spoken(l[1]), S.settings().rate, voiceOf(l[0])); };
     const api = {
       label: s.lines.length > 1 ? 'Siguiente ▸' : 'Continuar',
       advance() {
@@ -439,7 +439,7 @@ const RENDER = {
       <div class="kana-hero" lang="ja">${it.k}</div>
       <div class="kana-r">${esc(K.r)}</div>
       ${K.m ? `<p class="mn">${esc(K.m)}</p>` : ''}
-      <div class="row center">${audioBtn(it.k, 'Escuchar')}</div>
+      <div class="row center">${sayBtn(it.k, 'Escuchar')}</div>
       ${KANA[twin] && twin !== it.k ? `<p class="muted small">En ${K.script === 'hira' ? 'katakana' : 'hiragana'}: <span lang="ja" class="twin">${twin}</span></p>` : ''}
     </article>`;
     if (S.settings().sound !== false) setTimeout(() => speak(it.k, S.settings().rate), 200);
@@ -457,8 +457,8 @@ const RENDER = {
       ${e.note ? `<div class="tip">💡 ${rich(e.note)}</div>` : ''}
       ${!kanaOnly || e.w === e.r ? '' : ''}
       ${kanaOnly && e.w !== e.r && !/[゠-ヿ]/.test(e.w) ? `<p class="muted small">Con kanji se escribe <span lang="ja">${esc(e.w)}</span> (lo verás más adelante).</p>` : ''}
-      <div class="row center">${audioBtn(e.r, 'Escuchar')}</div></article>`;
-    if (S.settings().sound !== false) setTimeout(() => speak(e.r, S.settings().rate), 200);
+      <div class="row center">${sayBtn(sayWord(e), 'Escuchar')}</div></article>`;
+    if (S.settings().sound !== false) setTimeout(() => speak(sayWord(e), S.settings().rate), 200);
   },
   kanjiCard(it, body) {
     const K = KANJI[it.k];
@@ -468,7 +468,7 @@ const RENDER = {
       <div class="kanji-es">${esc(K.es)}</div>
       <div class="readings"><span><small>on</small> <span lang="ja">${esc(K.on)}</span></span><span><small>kun</small> <span lang="ja">${esc(K.kun)}</span></span></div>
       <p class="mn">🧠 ${esc(K.mn)}</p>
-      ${exs.length ? `<div class="kex">${exs.map(e => `<div>${jp(e.w)} <span class="muted">${esc(e.r)} · ${esc(e.es)}</span></div>`).join('')}</div>` : ''}
+      ${exs.length ? `<div class="kex">${exs.map(e => `<div>${jp(`${e.w}=${e.id}`)} <span class="muted">${esc(e.r)} · ${esc(e.es)}</span></div>`).join('')}</div>` : ''}
     </article>`;
   },
 
@@ -507,7 +507,7 @@ const RENDER = {
         if (b.disabled) return;
         (b.parentElement === bank ? line : bank).appendChild(b);
         const tok = tokenize(t.raw)[0];
-        if (b.parentElement === line && S.settings().sound !== false) speak(tok.reading || tok.surface, S.settings().rate + 0.2);
+        if (b.parentElement === line && S.settings().sound !== false) speak(tokSay(tok, true), S.settings().rate + 0.2);
         setReady(line.children.length > 0); sfx('tap');
       };
       return b;

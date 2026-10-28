@@ -172,7 +172,7 @@ function viewWords(tab = 'vocab') {
     inner = `<p class="lead">Has aprendido <b>${list.length}</b> palabras. Toca una para ver su detalle.</p>
       <input class="search" placeholder="Buscar en japonés o español…" aria-label="Buscar">
       <div class="wlist">${list.map(([id, w]) => { const e = ENTRIES[id]; return `<div class="wrow" data-q="${esc((e.w + ' ' + e.r + ' ' + e.es).toLowerCase())}">
-        <div class="wj">${jp(e.w)}</div><div class="wr" lang="ja">${e.w !== e.r ? esc(e.r) : ''}</div><div class="we">${esc(e.es)}</div>
+        <div class="wj">${jp(`${e.w}=${e.id}`)}</div><div class="wr" lang="ja">${e.w !== e.r ? esc(e.r) : ''}</div><div class="we">${esc(e.es)}</div>
         <div class="lvl-dots" title="Nivel de memoria ${w.box}/7">${[1, 2, 3, 4, 5, 6, 7].map(i => `<i class="${i <= w.box ? 'on' : ''}"></i>`).join('')}</div>
         ${!WORD_LESSON[id] || w.src === 'lectura' ? `<button class="icon rm" data-rm="${esc(id)}" title="Quitar del repaso">✕</button>` : '<span></span>'}</div>`; }).join('') || '<p class="muted">Aún no hay palabras.</p>'}</div>`;
   } else if (tab === 'kana') {
@@ -265,6 +265,8 @@ function viewMethod() {
     <p>Todas las palabras japonesas son clicables: significado, lectura, forma del verbo y kanji que la componen. La furigana aparece solo sobre los kanji que aún no aprendes, para que poco a poco leas sin ayuda.</p>
     <h3>7. Saltar lo que ya sabes</h3>
     <p>Si ya conoces una unidad, "⏩ Ya lo sé" te da una prueba corta: si la apruebas, avanzas directamente.</p>
+    <h3>Voces</h3>
+    <p>Los audios se generaron con <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener">VOICEVOX</a>: <b>VOICEVOX:冥鳴ひまり</b> y <b>VOICEVOX:玄野武宏</b> (personajes masculinos de los diálogos). Si falta algún audio, se usa la voz japonesa de tu navegador.</p>
     <h3>Referencias</h3>
     <ul class="refs small">
       <li>Hu, M., & Nation, P. (2000). Unknown vocabulary density and reading comprehension. <i>Reading in a Foreign Language</i>, 13(1).</li>
