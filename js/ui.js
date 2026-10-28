@@ -63,10 +63,10 @@ export function rich(s) {
 }
 
 // Botón de audio para texto japonés tokenizado (voice: 'f' | 'm')
-export const audioBtn = (text, label = '', voice = 'f') => sayBtn(spoken(text), label, voice);
+export const audioBtn = (text, label = '', voice = '') => sayBtn(spoken(text), label, voice);
 // Botón de audio para un texto ya listo para pronunciar
-export function sayBtn(say, label = '', voice = 'f') {
-  return `<button class="audio" data-say="${esc(say)}" data-voice="${voice}" aria-label="Escuchar">🔊${label ? ' ' + esc(label) : ''}</button>`;
+export function sayBtn(say, label = '', voice = '') {
+  return `<button class="audio" data-say="${esc(say)}"${voice ? ` data-voice="${voice}"` : ''} aria-label="Escuchar">🔊${label ? ' ' + esc(label) : ''}</button>`;
 }
 
 // ───── Ventana de significado ─────
@@ -94,7 +94,7 @@ function showWord(el) {
     else if (known) status = '<span class="tag ok">✓ ya la aprendiste</span>';
     else status = `<span class="tag new">nueva</span>${wl ? ` <span class="muted small">se enseña en «${esc(wl.l.title)}»</span>` : ''} <button class="btn sm" data-addword="${esc(e.id)}">+ Añadir a repaso</button>`;
     pop.innerHTML = `
-      <div class="pop-head"><div class="pop-w" lang="ja">${ruby}</div>${sayBtn(el.dataset.v)}</div>
+      <div class="pop-head"><div class="pop-w" lang="ja">${ruby}</div>${sayBtn(el.dataset.v, '', 'f')}</div>
       ${hasKanji(surface) || /[゠-ヿ]/.test(surface) ? `<div class="pop-r" lang="ja">${esc(reading)}</div>` : ''}
       ${S.settings().romaji ? `<div class="pop-ro">${esc(romajiOf(e, reading))}</div>` : ''}
       <div class="pop-es">${esc(e.es)}</div>
@@ -109,7 +109,7 @@ function showWord(el) {
   let x = r.left + r.width / 2 - pw / 2; x = Math.max(8, Math.min(x, innerWidth - pw - 8));
   let y = r.bottom + 8; if (y + ph > innerHeight - 8) y = Math.max(8, r.top - ph - 8);
   pop.style.left = x + 'px'; pop.style.top = y + 'px';
-  if (S.settings().sound !== false && e) speak(el.dataset.v, S.settings().rate);
+  if (S.settings().sound !== false && e) speak(el.dataset.v, S.settings().rate, 'f');
 }
 
 document.addEventListener('click', ev => {

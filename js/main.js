@@ -270,7 +270,7 @@ function viewMethod() {
     <h3>Saltar lo que ya sabes</h3>
     <p>Si ya conoces una unidad, "⏩ Ya lo sé" te da una prueba corta: si la apruebas, avanzas directamente.</p>
     <h3>Voces</h3>
-    <p>Los audios se generaron con <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener">VOICEVOX</a>: <b>VOICEVOX:冥鳴ひまり</b> y <b>VOICEVOX:玄野武宏</b> (personajes masculinos de los diálogos). Si falta algún audio, se usa la voz japonesa de tu navegador.</p>
+    <p>Los audios se generaron con <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener">VOICEVOX</a>: <b>VOICEVOX:春日部つむぎ</b> y <b>VOICEVOX:玄野武宏</b>. Las palabras y los kana usan siempre la misma voz, como referencia; las oraciones se reparten entre las dos, porque escuchar a distintos hablantes entrena mejor el oído. En los diálogos, cada personaje tiene su voz. Si falta algún audio, se usa la voz japonesa de tu navegador.</p>
     <h3>Referencias</h3>
     <ul class="refs small">
       <li>Hu, M., & Nation, P. (2000). Unknown vocabulary density and reading comprehension. <i>Reading in a Foreign Language</i>, 13(1).</li>

@@ -556,7 +556,7 @@ const RENDER = {
         if (b.disabled) return;
         (b.parentElement === bank ? line : bank).appendChild(b);
         const tok = tokenize(t.raw)[0];
-        if (b.parentElement === line && S.settings().sound !== false) speak(tokSay(tok, true), S.settings().rate + 0.2);
+        if (b.parentElement === line && S.settings().sound !== false) speak(tokSay(tok, true), S.settings().rate + 0.2, 'f');
         setReady(line.children.length > 0); sfx('tap');
       };
       return b;

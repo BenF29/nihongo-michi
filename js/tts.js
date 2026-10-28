@@ -1,7 +1,7 @@
 // Pronunciación: audios pregenerados con VOICEVOX (audio/*.mp3, ver tools/gen-audio.mjs).
 // Si un texto no tiene audio, se usa la síntesis de voz del navegador (Web Speech API).
 
-import { audioKey } from './dict.js';
+import { audioKey, autoVoice } from './dict.js';
 
 let manifest = new Set();
 const ready = fetch('audio/index.json').then(r => r.ok ? r.json() : []).then(a => { manifest = new Set(a); }).catch(() => {});
@@ -22,10 +22,11 @@ export const hasJapaneseVoice = () => manifest.size > 0 || !!voice;
 
 let current = null;
 // rate: 0.85 = velocidad normal de los audios
-export async function speak(text, rate = 0.85, v = 'f') {
+export async function speak(text, rate = 0.85, v) {
   if (!text || /^[っッー]$/.test(text)) return;   // pausas y alargamientos no tienen sonido propio
   stopSpeaking();
   await ready;
+  v = v || autoVoice(text);
   const key = [v, 'f', 'm'].map(x => audioKey(text, x)).find(k => manifest.has(k));
   if (key) {
     const a = new Audio(`audio/${key}.mp3`);

@@ -205,6 +205,12 @@ export function audioKey(text, voice = 'f') {
 // Personajes con voz masculina en los diálogos
 export const MALE = new Set(['ケン', 'はると', 'ルイス', '田中', 'お父さん', '父', '兄', '弟', '店員', 'おじいさん']);
 export const voiceOf = who => MALE.has(who) ? 'm' : 'f';
+// Las palabras sueltas usan siempre la voz principal; las oraciones se reparten entre las dos
+// voces (escuchar a varios hablantes entrena mejor el oído). Cada lectura tiene un solo narrador.
+const parity = str => parseInt(audioKey(str, 'v').slice(-1), 36) % 2 ? 'm' : 'f';
+export const isSentence = say => /[。？！、]/.test(say) || say.length >= 10;
+export const autoVoice = say => isSentence(say) ? parity(say) : 'f';
+export const readingVoice = id => parity(id);
 
 // Conversión básica romaji → hiragana (para responder sin teclado japonés)
 const RK = { kya:'きゃ',kyu:'きゅ',kyo:'きょ',sha:'しゃ',shu:'しゅ',sho:'しょ',cha:'ちゃ',chu:'ちゅ',cho:'ちょ',nya:'にゃ',nyu:'にゅ',nyo:'にょ',hya:'ひゃ',hyu:'ひゅ',hyo:'ひょ',mya:'みゃ',myu:'みゅ',myo:'みょ',rya:'りゃ',ryu:'りゅ',ryo:'りょ',gya:'ぎゃ',gyu:'ぎゅ',gyo:'ぎょ',ja:'じゃ',ju:'じゅ',jo:'じょ',bya:'びゃ',byu:'びゅ',byo:'びょ',pya:'ぴゃ',pyu:'ぴゅ',pyo:'ぴょ',shi:'し',chi:'ち',tsu:'つ',

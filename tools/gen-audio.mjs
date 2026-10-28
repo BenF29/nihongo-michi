@@ -12,26 +12,27 @@ import { mkdirSync, existsSync, writeFileSync, readdirSync, unlinkSync } from 'n
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ENTRIES, tokenize, spoken, tokSay, sayWord, audioKey, voiceOf, toRomaji, toHira, toKata } from '../js/dict.js';
+import { ENTRIES, tokenize, spoken, tokSay, sayWord, audioKey, voiceOf, autoVoice, readingVoice, toRomaji, toHira, toKata } from '../js/dict.js';
 import { KANA } from '../js/data/kana.js';
 import { STEPS } from '../js/data/lessons/index.js';
 import READINGS from '../js/data/readings.js';
 
 const ENGINE = process.env.VOICEVOX || 'http://127.0.0.1:50021';
-const SPEAKER = { f: 14, m: 11 };   // 冥鳴ひまり, 玄野武宏
+const SPEAKER = { f: 8, m: 11 };   // 春日部つむぎ, 玄野武宏
 const OUT = new URL('../audio/', import.meta.url).pathname;
 const PRT = { 'は': 'わ', 'へ': 'え', 'を': 'お' };
 
 // ───── Reunir todos los textos que la app puede pronunciar ─────
 const items = new Map();   // key -> { text, voice, reading }
-function add(text, voice = 'f', reading = null) {
+function add(text, voice = null, reading = null) {
+  voice = voice || autoVoice(text);
   if (!text || !text.replace(/[。、！？…「」]/g, '')) return;
   const key = audioKey(text, voice);
   if (!items.has(key)) items.set(key, { key, text, voice, reading });
 }
 const expected = toks => toks.filter(t => !t.punct && !t.blank).map(t => t.raw?.includes('|') ? t.reading
   : t.entry?.pos === 'prt' && PRT[t.surface] ? PRT[t.surface] : (t.reading || t.surface)).join('');
-function addJp(text, voice = 'f') {
+function addJp(text, voice = null) {
   const toks = tokenize(text);
   add(spoken(text), voice, expected(toks));
   for (const t of toks) if (!t.punct && !t.blank) add(tokSay(t, true), 'f', t.entry?.pos === 'prt' && PRT[t.surface] ? PRT[t.surface] : (t.reading || t.surface));
@@ -51,7 +52,7 @@ for (const steps of Object.values(STEPS)) for (const s of steps) {
 }
 for (const r of READINGS) {
   addJp(r.title);
-  for (const [j] of r.paras.flat()) addJp(j);
+  for (const [j] of r.paras.flat()) addJp(j, readingVoice(r.id));
   for (const q of r.questions) {
     if (q.qjp) addJp(q.qjp);
     if (q.opts?.every(hasJp)) q.opts.forEach(o => addJp(o));
@@ -83,7 +84,13 @@ async function synth(item) {
     }
     if (!ok) mismatches.push(`${item.text}  esperado ${item.reading}  motor ${q.kana}`);
   }
-  Object.assign(q, { speedScale: 0.95, prePhonemeLength: 0.05, postPhonemeLength: 0.12 });
+  Object.assign(q, { speedScale: 0.95, prePhonemeLength: 0.08, postPhonemeLength: 0.15 });
+  // un kana aislado sale muy corto y con un salto de tono: alargar la vocal y estabilizar el tono
+  const moras = q.accent_phrases.flatMap(p => p.moras);
+  if (moras.length <= 2) {
+    const pitch = Math.max(...moras.map(m => m.pitch));
+    for (const m of moras) { m.vowel_length = Math.max(m.vowel_length, 0.32); if (m.pitch > 0) m.pitch = pitch; }
+  }
   const r = await fetch(`${ENGINE}/synthesis?speaker=${speaker}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(q) });
   if (!r.ok) throw new Error(`synthesis ${r.status}: ${item.text}`);
   const wav = join(tmpdir(), `michi-${item.key}.wav`);

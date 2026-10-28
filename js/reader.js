@@ -2,7 +2,7 @@
 
 import READINGS from './data/readings.js';
 import { LESSONS, LESSON_INDEX } from './data/curriculum.js';
-import { tokenize, checkAnswer } from './dict.js';
+import { tokenize, checkAnswer, readingVoice } from './dict.js';
 import * as S from './state.js';
 import { speak, stopSpeaking } from './tts.js';
 import { esc, $, $$, jp, rich, spoken, sfx, confetti, romajiToHira, toast } from './ui.js';
@@ -97,7 +97,7 @@ export function renderReading(root, id) {
     <div class="cov"><div class="meter"><i style="width:${c.pct}%"></i></div><span>Conoces el <b>${c.pct}%</b> de las palabras${c.unknown.length ? ` · ${c.unknown.length} nuevas (subrayadas)` : ''}</span></div>
     <article class="text marknew${listen ? ' veiled' : ''}">
       ${listen ? '<div class="veil"><p>El texto está oculto para practicar la escucha.</p><button class="btn sm" id="reveal">Mostrar texto</button></div>' : ''}
-      ${r.paras.map(p => `<p>${p.map(([j, es]) => `<span class="sent" data-g="${gi++}"><span class="sj">${jp(j, { mark: 'known' })}</span><button class="sp-say" data-say="${esc(spoken(j))}" aria-label="Escuchar oración">🔈</button><span class="str">${rich(es)}</span></span>`).join(' ')}</p>`).join('')}
+      ${r.paras.map(p => `<p>${p.map(([j, es]) => `<span class="sent" data-g="${gi++}"><span class="sj">${jp(j, { mark: 'known' })}</span><button class="sp-say" data-say="${esc(spoken(j))}" data-voice="${readingVoice(r.id)}" aria-label="Escuchar oración">🔈</button><span class="str">${rich(es)}</span></span>`).join(' ')}</p>`).join('')}
     </article>
     ${c.unknown.length ? `<details class="newwords"><summary>Palabras nuevas en este texto (${c.unknown.length})</summary>
       <div class="nwlist">${c.unknown.map(e => `<div class="nw">${jp(`${e.w}=${e.id}`)} <span class="muted">${esc(e.r)}</span> — ${esc(e.es)}</div>`).join('')}</div>
@@ -136,7 +136,7 @@ export function renderReading(root, id) {
     while (idx < sentEls.length && my === run) {
       showIdx();
       sentEls.forEach(x => x.classList.remove('reading')); sentEls[idx].classList.add('reading');
-      await speak(sentEls[idx].querySelector('.sp-say').dataset.say, rate());
+      await speak(sentEls[idx].querySelector('.sp-say').dataset.say, rate(), readingVoice(r.id));
       if (my !== run) return;
       sentEls[idx].classList.remove('reading');
       if (single || idx === sentEls.length - 1) break;
@@ -150,7 +150,7 @@ export function renderReading(root, id) {
   $('#lpPrev', root)?.addEventListener('click', () => playFrom(idx - 1));
   $('#lpNext', root)?.addEventListener('click', () => playFrom(idx + 1));
   $('#lpRep', root)?.addEventListener('click', () => playFrom(idx, true));
-  async function playEv(ev) { run++; for (const g of [].concat(ev ?? [])) { const el = sentEls[g]; if (el) await speak(el.querySelector('.sp-say').dataset.say, rate()); } }
+  async function playEv(ev) { run++; for (const g of [].concat(ev ?? [])) { const el = sentEls[g]; if (el) await speak(el.querySelector('.sp-say').dataset.say, rate(), readingVoice(r.id)); } }
 
   let playing = false;
   $('#playAll', root)?.addEventListener('click', async ev => {
@@ -159,7 +159,7 @@ export function renderReading(root, id) {
     for (const s of $$('.sent', text)) {
       if (!playing) break;
       s.classList.add('reading');
-      await speak(s.querySelector('.sp-say').dataset.say, S.settings().rate);
+      await speak(s.querySelector('.sp-say').dataset.say, S.settings().rate, readingVoice(r.id));
       s.classList.remove('reading');
     }
     playing = false; ev.target.textContent = '▶ Escuchar';
