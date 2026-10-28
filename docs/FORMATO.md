@@ -78,6 +78,13 @@ Lo que introduce cada lección (kana, kanji, palabras) está en `curriculum.js`.
 // Ordenar fichas para formar la oración japonesa (alt: otras respuestas válidas)
 { t: 'build', es: 'Yo soy estudiante.', jp: 'わたし は 学生 です 。', extra: ['か', 'の'], alt: [] }
 
+// Escribir la oración en japonés (kana, kanji o romaji); las fichas quedan como ayuda.
+// Además, desde la unidad 4 la app convierte automáticamente parte de los 'build' en 'write'.
+{ t: 'write', es: 'Yo soy estudiante.', jp: 'わたし は 学生 です 。', alt: [] }
+
+// Dictado: escuchar y escribir (los pasos 'auto' ya agregan dictados con oraciones de la lección)
+{ t: 'dictation', jp: 'わたし は 学生 です 。', es: 'Yo soy estudiante.' }
+
 // Escuchar (TTS) y elegir el significado
 { t: 'listen', jp: 'おはようございます 。', opts: ['Buenos días.', 'Buenas noches.'], a: 0 }
 

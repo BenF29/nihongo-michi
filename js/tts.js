@@ -26,7 +26,7 @@ export async function speak(text, rate = 0.85, v = 'f') {
   if (!text || /^[っッー]$/.test(text)) return;   // pausas y alargamientos no tienen sonido propio
   stopSpeaking();
   await ready;
-  const key = [audioKey(text, v), audioKey(text, 'f')].find(k => manifest.has(k));
+  const key = [v, 'f', 'm'].map(x => audioKey(text, x)).find(k => manifest.has(k));
   if (key) {
     const a = new Audio(`audio/${key}.mp3`);
     a.playbackRate = Math.min(2, Math.max(0.5, rate / 0.85));

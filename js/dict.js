@@ -206,6 +206,80 @@ export function audioKey(text, voice = 'f') {
 export const MALE = new Set(['ケン', 'はると', 'ルイス', '田中', 'お父さん', '父', '兄', '弟', '店員', 'おじいさん']);
 export const voiceOf = who => MALE.has(who) ? 'm' : 'f';
 
+// Conversión básica romaji → hiragana (para responder sin teclado japonés)
+const RK = { kya:'きゃ',kyu:'きゅ',kyo:'きょ',sha:'しゃ',shu:'しゅ',sho:'しょ',cha:'ちゃ',chu:'ちゅ',cho:'ちょ',nya:'にゃ',nyu:'にゅ',nyo:'にょ',hya:'ひゃ',hyu:'ひゅ',hyo:'ひょ',mya:'みゃ',myu:'みゅ',myo:'みょ',rya:'りゃ',ryu:'りゅ',ryo:'りょ',gya:'ぎゃ',gyu:'ぎゅ',gyo:'ぎょ',ja:'じゃ',ju:'じゅ',jo:'じょ',bya:'びゃ',byu:'びゅ',byo:'びょ',pya:'ぴゃ',pyu:'ぴゅ',pyo:'ぴょ',shi:'し',chi:'ち',tsu:'つ',
+  ka:'か',ki:'き',ku:'く',ke:'け',ko:'こ',sa:'さ',si:'し',su:'す',se:'せ',so:'そ',ta:'た',ti:'ち',tu:'つ',te:'て',to:'と',na:'な',ni:'に',nu:'ぬ',ne:'ね',no:'の',ha:'は',hi:'ひ',fu:'ふ',hu:'ふ',he:'へ',ho:'ほ',ma:'ま',mi:'み',mu:'む',me:'め',mo:'も',ya:'や',yu:'ゆ',yo:'よ',ra:'ら',ri:'り',ru:'る',re:'れ',ro:'ろ',wa:'わ',wo:'を',ga:'が',gi:'ぎ',gu:'ぐ',ge:'げ',go:'ご',za:'ざ',ji:'じ',zi:'じ',zu:'ず',ze:'ぜ',zo:'ぞ',da:'だ',de:'で',do:'ど',ba:'ば',bi:'び',bu:'ぶ',be:'べ',bo:'ぼ',pa:'ぱ',pi:'ぴ',pu:'ぷ',pe:'ぺ',po:'ぽ',a:'あ',i:'い',u:'う',e:'え',o:'お' };
+export function romajiToHira(s) {
+  s = s.toLowerCase();
+  let out = '';
+  for (let i = 0; i < s.length;) {
+    if (s[i] === s[i + 1] && /[bcdfghjkmprstwz]/.test(s[i])) { out += 'っ'; i++; continue; }
+    if (s[i] === 'n' && (s[i + 1] === "'" || !/[aiueoy]/.test(s[i + 1] || ''))) { out += 'ん'; i += s[i + 1] === "'" ? 2 : 1; continue; }
+    let m = false;
+    for (const L of [3, 2, 1]) { const k = s.slice(i, i + L); if (RK[k]) { out += RK[k]; i += L; m = true; break; } }
+    if (!m) { if (s[i] === '-') out += 'ー'; else out += s[i]; i++; }
+  }
+  return out;
+}
+
+// ───── Corrección de respuestas escritas en japonés ─────
+// Acepta kana, kanji o romaji (se convierte a hiragana). Es tolerante con vocales largas
+// (こうひい / こーひー / koohii), con は/わ, へ/え, を/お en partículas, y con espacios y puntuación.
+const SMALL_V = { 'ゃ': 'a', 'ゅ': 'u', 'ょ': 'o', 'ぁ': 'a', 'ぃ': 'i', 'ぅ': 'u', 'ぇ': 'e', 'ぉ': 'o' };
+const VOWEL_OF = ch => { if (SMALL_V[ch]) return SMALL_V[ch]; const r = toRomaji(ch); return /[aiueo]$/.test(r) ? r.slice(-1) : ''; };
+const LONG = { 'あ': 'a', 'い': 'ie', 'う': 'uo', 'え': 'e', 'お': 'o' };
+const clean = s => toHira(s).replace(/[\s。、．，！？!?.,「」『』…・]/g, '').replace(/を/g, 'お');
+// Forma suelta: ignora la duración de las vocales (こうひい = こひ)
+export function looseKana(s) {
+  let out = '', prev = '';
+  for (const ch of clean(s)) {
+    if (ch === 'ー') continue;
+    if (LONG[ch] && prev && LONG[ch].includes(prev)) continue;
+    out += ch; prev = VOWEL_OF(ch) || prev;
+  }
+  return out;
+}
+// Forma estricta: distingue vocales largas, pero acepta las grafías equivalentes (ー = vocal, おう = おお, えい = ええ)
+const VKANA = { a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お' };
+export function strictKana(s) {
+  let out = '', prev = '';
+  for (let ch of clean(s)) {
+    if (ch === 'ー' && prev) ch = VKANA[prev];
+    else if (ch === 'う' && prev === 'o') ch = 'お';
+    else if (ch === 'い' && prev === 'e') ch = 'え';
+    out += ch; prev = VOWEL_OF(ch) || prev;
+  }
+  return out;
+}
+export function toKanaInput(v) {
+  return v.replace(/[a-zA-Z'\-]+/g, m => romajiToHira(m));
+}
+const PRON = { 'は': 'わ', 'へ': 'え', 'を': 'お' };
+// Todas las formas aceptables (en forma "suelta") de un texto tokenizado
+export function answerForms(text, norm = looseKana, cap = 4096) {
+  const toks = tokenize(text).filter(t => !t.punct && !t.blank);
+  let forms = [''];
+  for (const t of toks) {
+    const opts = new Set([t.surface, t.reading || t.surface]);
+    if (t.entry?.pos === 'prt' && PRON[t.surface]) opts.add(PRON[t.surface]);
+    if (t.entry?.pos === 'exp' && t.surface.endsWith('は')) opts.add(t.surface.slice(0, -1) + 'わ');   // こんにちは
+    const next = [];
+    for (const f of forms) for (const o of opts) next.push(f + o);
+    forms = next.length > cap ? next.slice(0, cap) : next;
+  }
+  return new Set(forms.map(norm));
+}
+// 'exact' si coincide, 'close' si solo difiere en la duración de alguna vocal, false si no
+export function checkAnswer(input, texts) {
+  const kana = toKanaInput(input);
+  if (!looseKana(kana)) return false;
+  texts = [].concat(texts);
+  if (texts.some(t => answerForms(t, strictKana).has(strictKana(kana)))) return 'exact';
+  if (texts.some(t => answerForms(t, looseKana).has(looseKana(kana)))) return 'close';
+  return false;
+}
+export const answerMatches = (input, texts) => !!checkAnswer(input, texts);
+
 // Clave de palabra para seguimiento (los nombres propios y la puntuación no cuentan)
 export function wordKey(tok) {
   if (!tok || tok.punct || tok.blank || !tok.entry) return null;

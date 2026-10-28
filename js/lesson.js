@@ -9,7 +9,7 @@ import { LESSONS, LESSON_INDEX, UNITS } from './data/curriculum.js';
 import { STEPS } from './data/lessons/index.js';
 import { KANA, splitKana } from './data/kana.js';
 import { KANJI } from './data/kanji.js';
-import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf } from './dict.js';
+import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf, checkAnswer, toKanaInput, textReading } from './dict.js';
 import * as S from './state.js';
 import { speak, stopSpeaking } from './tts.js';
 import { esc, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, sayBtn, spoken, sfx, confetti, POS, romajiOf, closePop } from './ui.js';
@@ -88,6 +88,43 @@ function qKanji(k, pool) {
   return { kind: 'choice', prompt: `<div class="qlabel">¿Qué significa este kanji?</div><div class="kanji-big" lang="ja">${k}</div>`,
     opts: shuffle([k, ...others]).map(x => ({ key: x, html: esc(KANJI[x].es) })), answer: k, why: `${k} = <b>${esc(K.es)}</b>. ${esc(K.mn)}` };
 }
+function buildItem(s) {
+  const ans = tokenize(s.jp).filter(t => !t.punct);
+  const extra = (s.extra || []).map(x => tokenize(x)[0]);
+  return { kind: 'build', es: s.es, target: ans.map(t => t.surface).join(''), alt: (s.alt || []).map(a => tokenize(a).filter(t => !t.punct).map(t => t.surface).join('')),
+    tiles: shuffle([...ans, ...extra].map((t, i) => ({ i, raw: t.raw }))), jpText: s.jp, why: rich(s.why) };
+}
+// Producción: escribir la oración en japonés (kana, kanji o romaji). Las fichas quedan como ayuda.
+function qWrite(s) {
+  return { kind: 'write', prompt: `<div class="qlabel">✍️ Escribe en japonés</div><div class="qes">«${rich(s.es)}»</div>`,
+    targets: [s.jp, ...(s.alt || [])], jpText: s.jp, why: rich(s.why), after: spoken(s.jp), hint: buildItem({ ...s, extra: [] }) };
+}
+function qWriteWord(e, srs) {
+  const shown = e.w === e.r || /[\u30a0-\u30ff]/.test(e.w) ? e.r : e.w;
+  return { kind: 'write', srs, prompt: `<div class="qlabel">✍️ ¿Cómo se dice en japonés?</div><div class="qes">«${esc(e.es)}»</div>`,
+    targets: [`${e.w}=${e.id}`], jpText: `${shown}=${e.id}`, after: sayWord(e),
+    why: `«${esc(e.es)}» = <span lang="ja">${esc(e.w)}</span>${e.w !== e.r ? ` (${esc(e.r)})` : ''}` };
+}
+// Dictado: escuchar y escribir
+function qDictation(text, es) {
+  return { kind: 'write', listen: spoken(text), prompt: `<div class="qlabel">🎧 Dictado: escribe lo que escuchas</div>${listenBox(spoken(text))}`,
+    targets: [text], jpText: text, why: es ? `«${rich(es)}»` : '', hint: buildItem({ jp: text, es: es || '' }) };
+}
+// Oraciones de una lección aptas para dictado (cortas y con traducción)
+function sentencesOf(steps) {
+  const out = [];
+  const add = (j, es) => { if (j && es && !j.includes('＿')) { const n = tokenize(j).filter(t => !t.punct).length; if (n >= 2 && n <= 8) out.push([j, es]); } };
+  for (const s of steps) {
+    (s.ex || []).forEach(([j, es]) => add(j, es));
+    (s.lines || []).forEach(([, j, es]) => add(j, es));
+    if (s.t === 'build') add(s.jp, s.es);
+  }
+  return out;
+}
+// Desde la unidad 4 las fichas se van retirando: armar oraciones pasa a escribirlas
+const U4 = LESSON_INDEX.u4l1, U6 = LESSON_INDEX.u6l1;
+function produceRatio(li) { return li < U4 ? 0 : li < U6 ? 0.5 : 0.75; }
+
 function qMatch(pairs) {
   return { kind: 'match', pairs: pairs.map(([a, b, say]) => ({ a, b, say })) };
 }
@@ -110,12 +147,12 @@ function fromAuthored(s) {
       return { kind: 'choice', fill: s.jp, prompt: `<div class="qlabel">${rich(s.q || 'Completa la oración')}</div><div class="qjp fillq">${jp(s.jp, { cls: 'mid', blank: '<span class="blank" data-blank>　</span>' })}</div>${s.es ? `<div class="qes small">${rich(s.es)}</div>` : ''}`,
         opts: s.opts.map((o, i) => ({ key: i, html: jp(o, { plain: true }), raw: o })), answer: s.a, why: rich(s.why), shuffle: true,
         after: spoken(s.jp.replace('＿', s.opts[s.a])) };
-    case 'build': {
-      const ans = tokenize(s.jp).filter(t => !t.punct);
-      const extra = (s.extra || []).map(x => tokenize(x)[0]);
-      return { kind: 'build', es: s.es, target: ans.map(t => t.surface).join(''), alt: (s.alt || []).map(a => tokenize(a).filter(t => !t.punct).map(t => t.surface).join('')),
-        tiles: shuffle([...ans, ...extra].map((t, i) => ({ i, raw: t.raw }))), jpText: s.jp, why: rich(s.why) };
-    }
+    case 'build':
+      return buildItem(s);
+    case 'write':
+      return qWrite(s);
+    case 'dictation':
+      return qDictation(s.jp, s.es);
     case 'match':
       return qMatch(s.pairs.map(([a, b]) => [a, b, spoken(a)]));
     case 'type':
@@ -135,8 +172,15 @@ function buildLessonQueue(lesson) {
   const lessonKana = splitKana(lesson.kana || '').filter(k => KANA[k] && k !== 'ー');
   const kanaPool = kanaUpTo(li, script);
   const q = [];
-  let matched = false;
+  let matched = false, builds = 0;
+  const ratio = S.lessonDone(lesson.id) ? 1 : produceRatio(li);
+  const dict = shuffle(sentencesOf(steps));
   for (const s of steps) {
+    if (s.t === 'build' && ratio > 0) {
+      builds++;
+      q.push((builds % 4) / 4 < ratio || ratio === 1 ? qWrite(s) : buildItem(s));
+      continue;
+    }
     if (s.t === 'teach' || s.t === 'dialog') { q.push({ kind: s.t, step: s }); continue; }
     if (s.t === 'kana') {
       const chars = s.chars ? splitKana(s.chars) : lessonKana;
@@ -192,6 +236,9 @@ function buildLessonQueue(lesson) {
         else if (newE.length) { const e = newE[(ni++ + Math.floor(Math.random() * newE.length)) % newE.length]; q.push(gens[i % 3](e, pool)); }
         else if (review.length) q.push(gens[i % 3](review[ri++ % review.length], pool));
       }
+      // producción de vocabulario y dictado desde «Primeros pasos»
+      if (li >= LESSON_INDEX.u3l1 && newE.length) q.push(qWriteWord(pick(newE, 1)[0]));
+      if (li >= LESSON_INDEX.u3l2 && dict.length) { const [j, es] = dict.pop(); q.push(qDictation(j, es)); }
       continue;
     }
     const it = fromAuthored(s);
@@ -229,7 +276,7 @@ function buildTestQueue(unit) {
   for (const l of unit.lessons) {
     const steps = STEPS[l.id] || [];
     const auth = steps.filter(s => ['mc', 'fill', 'build', 'listen'].includes(s.t));
-    pick(auth, 3).forEach(s => { const it = fromAuthored(s); if (it) q.push(it); });
+    pick(auth, 3).forEach(s => { const it = s.t === 'build' && LESSON_INDEX[l.id] >= U4 ? qWrite(s) : fromAuthored(s); if (it) q.push(it); });
     const es = entriesOf(l);
     pick(es, 2).forEach((e, i) => q.push((i ? qEsToJp : qJpToEs)(e, pool)));
     if (l.kana) {
@@ -246,7 +293,8 @@ function buildReviewQueue(ids) {
   const pool = [...S.knownWords()].map(id => ENTRIES[id]).filter(Boolean);
   const big = pool.length >= 4 ? pool : [...pool, ...wordsUpTo(LESSONS.length - 1)];
   const gens = [qJpToEs, qEsToJp, qListenWord];
-  return ids.map((id, i) => gens[i % 3](ENTRIES[id], big, id));
+  const p = S.me();
+  return ids.map((id, i) => (p?.words[id]?.box >= 3 && i % 2 === 0 ? qWriteWord(ENTRIES[id], id) : gens[i % 3](ENTRIES[id], big, id)));
 }
 
 // ───── Reproductor ─────
@@ -307,14 +355,14 @@ export function play(root, { mode, lesson, unit, ids, onExit }) {
     const f = body.querySelector('input'); if (f) setTimeout(() => f.focus(), 50);
   }
 
-  function grade(ok, correctHtml, it) {
+  function grade(ok, correctHtml, it, note) {
     phase = 'feedback';
     const first = !st.asked.has(it);
     st.asked.add(it);
     if (ok) {
       st.combo++; st.best = Math.max(st.best, st.combo);
       if (first) st.firstOk++;
-      const gain = first ? (st.combo >= 5 ? 15 : 10) : 5;
+      const gain = it.hinted ? 5 : first ? (st.combo >= 5 ? 15 : 10) : 5;
       st.xp += gain;
       sfx('ok');
     } else {
@@ -327,6 +375,7 @@ export function play(root, { mode, lesson, unit, ids, onExit }) {
     foot.className = 'pfoot ' + (ok ? 'ok' : 'bad');
     fb.innerHTML = `<div class="fb-t">${ok ? '✓ ' + praise[Math.floor(Math.random() * praise.length)] : '✗ No exactamente'}</div>
       ${!ok && correctHtml ? `<div class="fb-a">Respuesta correcta: ${correctHtml}</div>` : ''}
+      ${note ? `<div class="fb-n">${note}</div>` : ''}
       ${it.why ? `<div class="fb-w">${it.why}</div>` : ''}`;
     btn.textContent = 'Continuar'; btn.disabled = false; btn.classList.remove('hide');
     if (it.after && S.settings().sound !== false) speak(it.after, S.settings().rate);
@@ -338,7 +387,7 @@ export function play(root, { mode, lesson, unit, ids, onExit }) {
     const it = queue[st.i];
     if (phase === 'answer' && isQ(it) && current?.check) {
       const r = current.check();
-      grade(r.ok, r.correct, it);
+      grade(r.ok, r.correct, it, r.note);
       return;
     }
     if (current?.advance && current.advance()) return; // p. ej. diálogo que revela líneas
@@ -385,7 +434,7 @@ export function play(root, { mode, lesson, unit, ids, onExit }) {
   next();
 }
 
-const isQ = it => ['choice', 'build', 'match', 'type'].includes(it.kind);
+const isQ = it => ['choice', 'build', 'match', 'type', 'write'].includes(it.kind);
 
 // ───── Renderizadores ─────
 const RENDER = {
@@ -554,6 +603,42 @@ const RENDER = {
     return {};
   },
 
+  write(it, body, setReady) {
+    it.hinted = false;
+    body.innerHTML = `<div class="q">${it.prompt}</div>
+      <div class="write-box"><input class="type-in jp-in" lang="ja" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="en kana, kanji o romaji…" aria-label="Tu respuesta">
+      <div class="preview" lang="ja" aria-live="polite"></div></div>
+      <div class="row center">${it.hint ? '<button class="btn sm ghost use-tiles">🧩 Usar fichas (menos XP)</button>' : ''}</div>
+      <p class="hint">Sin teclado japonés: escribe en romaji (<i>watashi wa…</i>) y se convierte solo.</p>`;
+    const inp = $('input', body), prev = $('.preview', body);
+    let inner = null;
+    inp.oninput = () => {
+      const v = inp.value;
+      prev.textContent = /[a-z]/i.test(v) ? toKanaInput(v) : '';
+      setReady(v.trim().length > 0);
+    };
+    const tilesBtn = $('.use-tiles', body);
+    if (tilesBtn) tilesBtn.onclick = () => {
+      it.hinted = true;
+      const box = document.createElement('div');
+      body.querySelector('.write-box').replaceWith(box);
+      tilesBtn.parentElement.remove(); body.querySelector('.hint')?.remove();
+      inner = RENDER.build({ ...it.hint, tiles: shuffle(it.hint.tiles) }, box, setReady);
+      box.querySelector('.qlabel')?.parentElement.remove();   // el enunciado ya está arriba
+      setReady(false);
+    };
+    return {
+      check() {
+        if (inner) return inner.check();
+        const r = checkAnswer(inp.value, it.targets);
+        inp.disabled = true; inp.classList.add(r ? 'good' : 'badl');
+        const reading = textReading(tokenize(it.jpText));
+        const correct = `${jp(it.jpText)}${/[\u4e00-\u9faf]/.test(it.jpText) ? ` <span class="muted" lang="ja">(${esc(reading)})</span>` : ''}`;
+        return { ok: !!r, correct,
+          note: r === 'close' ? `Casi perfecto: revisa las vocales largas. Se escribe ${correct}.` : r === 'exact' && /[a-z]/i.test(inp.value) ? `En japonés: <span lang="ja">${esc(toKanaInput(inp.value.trim()))}</span>` : '' };
+      },
+    };
+  },
   type(it, body, setReady) {
     body.innerHTML = `<div class="q">${it.prompt}</div>
       <input class="type-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="escribe aquí…" aria-label="Respuesta">`;

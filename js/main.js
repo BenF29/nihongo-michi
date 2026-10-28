@@ -251,19 +251,23 @@ function viewMethod() {
   app.innerHTML = shell('', `<section class="page prose">
     <h1>Cómo funciona Michi</h1>
     <p class="lead">El diseño se basa en investigación sobre adquisición de segundas lenguas y psicología de la memoria.</p>
-    <h3>1. Un camino en orden coherente</h3>
+    <h3>Un camino en orden coherente</h3>
     <p>Primero hiragana, luego katakana, y recién entonces gramática y kanji, como en los cursos universitarios más usados (p. ej. <i>Genki</i>, donde se dominan los kana en las lecciones 1 y 2 antes de introducir kanji). Cada lección introduce pocas cosas nuevas y solo usa lo que ya viste: input "i+1" (Krashen), comprensible pero con un pequeño desafío.</p>
-    <h3>2. Recuperar, no releer</h3>
+    <h3>Recuperar, no releer</h3>
     <p>Responder preguntas fortalece la memoria mucho más que volver a leer (efecto de la práctica de recuperación; Roediger y Karpicke, 2006). Por eso cada lección es casi toda ejercicios activos, con <b>feedback inmediato que explica el porqué</b>. Las preguntas que fallas vuelven al final de la lección.</p>
-    <h3>3. Repetición espaciada</h3>
+    <h3>Repetición espaciada</h3>
     <p>Un meta-análisis de 48 experimentos (Kim y Webb, 2022, <i>Language Learning</i>) encontró un efecto medio-grande del espaciado en el aprendizaje de vocabulario, mejor con intervalos largos en pruebas diferidas. Las palabras nuevas se practican en bloque al aprenderlas y luego en intervalos crecientes (1, 3, 7, 16, 35… días) en la sección Repaso.</p>
-    <h3>4. Mnemotecnias para kana y kanji</h3>
+    <h3>Producir, no solo reconocer</h3>
+    <p>Reconocer la respuesta entre opciones es más fácil que producirla, y producir obliga a notar lo que aún no sabes (hipótesis del output, Swain, 1985). Recordar algo sin pistas también fortalece más la memoria que reconocerlo. Por eso las fichas se van retirando: desde la unidad 4 muchas oraciones hay que <b>escribirlas</b> (en kana, kanji o romaji). Si te trabas, puedes pedir las fichas a cambio de menos XP. En el repaso, una palabra pasa a pedirse escrita cuando ya la reconoces bien.</p>
+    <h3>Entrenar el oído</h3>
+    <p>Entender japonés hablado es una habilidad distinta de leerlo. Las lecciones incluyen <b>dictados</b>: escuchas una oración y la escribes. Las lecturas tienen el modo <b>🎧 Escuchar primero</b>: respondes las preguntas solo escuchando, oración por oración, y recién después ves el texto. Si te equivocas, puedes volver a escuchar justo la parte que contiene la respuesta.</p>
+    <h3>Mnemotecnias para kana y kanji</h3>
     <p>Asociar la forma de un carácter con una imagen y su sonido acelera mucho su aprendizaje (método de <i>Hiragana in 48 minutes</i>, Quackenbush y Ohso, 1983; Heisig). Cada kana y kanji trae su imagen mental.</p>
-    <h3>5. Lectura con 95–98 % de palabras conocidas</h3>
+    <h3>Lectura con 95–98 % de palabras conocidas</h3>
     <p>La comprensión cómoda de un texto se asocia a conocer alrededor del 98 % de sus palabras (Hu y Nation, 2000), aunque estudios posteriores muestran una curva más que un umbral exacto (Schmitt, Jiang y Grabe, 2011). Cada lectura te muestra qué porcentaje ya conoces y te recomienda las que están en tu zona; las palabras nuevas quedan subrayadas y puedes añadirlas a tu repaso.</p>
-    <h3>6. Siempre puedes consultar</h3>
+    <h3>Siempre puedes consultar</h3>
     <p>Todas las palabras japonesas son clicables: significado, lectura, forma del verbo y kanji que la componen. La furigana aparece solo sobre los kanji que aún no aprendes, para que poco a poco leas sin ayuda.</p>
-    <h3>7. Saltar lo que ya sabes</h3>
+    <h3>Saltar lo que ya sabes</h3>
     <p>Si ya conoces una unidad, "⏩ Ya lo sé" te da una prueba corta: si la apruebas, avanzas directamente.</p>
     <h3>Voces</h3>
     <p>Los audios se generaron con <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener">VOICEVOX</a>: <b>VOICEVOX:冥鳴ひまり</b> y <b>VOICEVOX:玄野武宏</b> (personajes masculinos de los diálogos). Si falta algún audio, se usa la voz japonesa de tu navegador.</p>
@@ -275,6 +279,7 @@ function viewMethod() {
       <li>Nation, I. S. P. (2006). How large a vocabulary is needed for reading and listening? <i>Canadian Modern Language Review</i>, 63(1).</li>
       <li>Quackenbush, H., & Ohso, M. (1983). <i>Hiragana in 48 Minutes</i>. Curriculum Development Centre.</li>
       <li>Roediger, H. L., & Karpicke, J. D. (2006). Test-enhanced learning. <i>Psychological Science</i>, 17(3).</li>
+      <li>Swain, M. (1985). Communicative competence: Some roles of comprehensible input and comprehensible output in its development. En Gass & Madden (eds.), <i>Input in Second Language Acquisition</i>. Newbury House.</li>
       <li>Schmitt, N., Jiang, X., & Grabe, W. (2011). The percentage of words known in a text and reading comprehension. <i>The Modern Language Journal</i>, 95(1).</li>
       <li>Banno, E. et al. <i>Genki: An Integrated Course in Elementary Japanese</i> (3ª ed.). The Japan Times.</li>
       <li>Kremmel, B., Indrarathne, B., Kormos, J., & Suzuki, S. (replicación de Hu & Nation 2000), <i>Language Learning</i>.</li>

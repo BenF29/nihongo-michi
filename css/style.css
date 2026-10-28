@@ -365,3 +365,26 @@ body[data-view="leccion"], body[data-view="prueba"], body[data-view="repasar"] {
   .play { width: 80px; height: 80px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Producción escrita */
+.write-box { display: grid; gap: .5rem; }
+.jp-in { font-family: var(--jp); }
+.preview { min-height: 1.8rem; text-align: center; font-size: 1.3rem; color: var(--blue); font-family: var(--jp); }
+.fb-n { margin-top: .2rem; font-weight: 700; }
+.use-tiles { margin-top: .4rem; }
+
+/* Lecturas: modo escucha */
+.seg { display: inline-flex; background: var(--bg2); border-radius: 12px; padding: 4px; gap: 4px; margin: .8rem 0 .2rem; }
+.seg button { border: 0; background: none; padding: .45rem .9rem; border-radius: 9px; font-weight: 800; color: var(--ink2); }
+.seg button.on { background: var(--card); color: var(--accent2); box-shadow: var(--shadow); }
+.lplayer { display: grid; gap: .7rem; margin: .8rem 0; }
+.lp-info { display: flex; flex-direction: column; }
+.lp-ctrl { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.lp-ctrl .play.big { width: 64px; height: 64px; font-size: 1.6rem; border-radius: 18px; }
+.lp-ctrl .icon { font-size: 1.5rem; color: var(--ink); }
+.lp-prog { display: flex; align-items: center; gap: .8rem; font-size: .85rem; color: var(--muted); font-weight: 700; }
+.lp-prog .meter { max-width: 220px; height: 7px; }
+.text { position: relative; }
+.text.veiled > p { filter: blur(9px); user-select: none; pointer-events: none; }
+.veil { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3rem; text-align: center; font-size: 1rem; color: var(--ink2); font-weight: 700; }
+.veil p { margin: 0; }

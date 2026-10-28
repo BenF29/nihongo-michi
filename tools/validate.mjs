@@ -62,7 +62,8 @@ function checkStep(where, s) {
       if (s.jp && !s.jp.split(/\s+/).includes('＿')) err(where, 'fill sin ＿');
       if (s.opts && (s.a < 0 || s.a >= s.opts.length)) err(where, `"a" fuera de rango`);
       break;
-    case 'build': need('es', 'jp'); break;
+    case 'build': case 'write': need('es', 'jp'); break;
+    case 'dictation': need('jp'); break;
     case 'match': if (s.pairs && s.pairs.length < 3) warn(where, 'match con menos de 3 pares'); break;
     case 'type': need('jp'); break;
     case 'words': case 'kana': case 'kanji': case 'kanaquiz': case 'auto': break;

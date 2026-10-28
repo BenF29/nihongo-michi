@@ -1,7 +1,7 @@
 // Utilidades de interfaz: texto japonés clicable, ventana de significado, avisos y sonidos.
 
-import { tokenize, rubyParts, hasKanji, toRomaji, kanjiIn, ENTRIES, lookup, spoken, tokSay } from './dict.js';
-export { spoken };
+import { tokenize, rubyParts, hasKanji, toRomaji, kanjiIn, ENTRIES, lookup, spoken, tokSay, romajiToHira } from './dict.js';
+export { spoken, romajiToHira };
 import { KANJI } from './data/kanji.js';
 import { LESSONS } from './data/curriculum.js';
 import * as S from './state.js';
@@ -170,18 +170,3 @@ export function confetti() {
   setTimeout(() => box.remove(), 3200);
 }
 
-// Conversión básica romaji → hiragana (para responder sin teclado japonés)
-const RK = { kya:'きゃ',kyu:'きゅ',kyo:'きょ',sha:'しゃ',shu:'しゅ',sho:'しょ',cha:'ちゃ',chu:'ちゅ',cho:'ちょ',nya:'にゃ',nyu:'にゅ',nyo:'にょ',hya:'ひゃ',hyu:'ひゅ',hyo:'ひょ',mya:'みゃ',myu:'みゅ',myo:'みょ',rya:'りゃ',ryu:'りゅ',ryo:'りょ',gya:'ぎゃ',gyu:'ぎゅ',gyo:'ぎょ',ja:'じゃ',ju:'じゅ',jo:'じょ',bya:'びゃ',byu:'びゅ',byo:'びょ',pya:'ぴゃ',pyu:'ぴゅ',pyo:'ぴょ',shi:'し',chi:'ち',tsu:'つ',
-  ka:'か',ki:'き',ku:'く',ke:'け',ko:'こ',sa:'さ',si:'し',su:'す',se:'せ',so:'そ',ta:'た',ti:'ち',tu:'つ',te:'て',to:'と',na:'な',ni:'に',nu:'ぬ',ne:'ね',no:'の',ha:'は',hi:'ひ',fu:'ふ',hu:'ふ',he:'へ',ho:'ほ',ma:'ま',mi:'み',mu:'む',me:'め',mo:'も',ya:'や',yu:'ゆ',yo:'よ',ra:'ら',ri:'り',ru:'る',re:'れ',ro:'ろ',wa:'わ',wo:'を',ga:'が',gi:'ぎ',gu:'ぐ',ge:'げ',go:'ご',za:'ざ',ji:'じ',zi:'じ',zu:'ず',ze:'ぜ',zo:'ぞ',da:'だ',de:'で',do:'ど',ba:'ば',bi:'び',bu:'ぶ',be:'べ',bo:'ぼ',pa:'ぱ',pi:'ぴ',pu:'ぷ',pe:'ぺ',po:'ぽ',a:'あ',i:'い',u:'う',e:'え',o:'お' };
-export function romajiToHira(s) {
-  s = s.toLowerCase();
-  let out = '';
-  for (let i = 0; i < s.length;) {
-    if (s[i] === s[i + 1] && /[bcdfghjkmprstwz]/.test(s[i])) { out += 'っ'; i++; continue; }
-    if (s[i] === 'n' && (s[i + 1] === "'" || !/[aiueoy]/.test(s[i + 1] || ''))) { out += 'ん'; i += s[i + 1] === "'" ? 2 : 1; continue; }
-    let m = false;
-    for (const L of [3, 2, 1]) { const k = s.slice(i, i + L); if (RK[k]) { out += RK[k]; i += L; m = true; break; } }
-    if (!m) { if (s[i] === '-') out += 'ー'; else out += s[i]; i++; }
-  }
-  return out;
-}
