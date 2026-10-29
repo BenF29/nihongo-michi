@@ -13,6 +13,7 @@ export const LEVELS = {
   3: { name: 'Básico', hint: 'tras «Lugares, cosas y personas»', color: '#0c8599' },
   4: { name: 'Pre-intermedio', hint: 'tras «Hablar con naturalidad»', color: '#9c36b5' },
   5: { name: 'Intermedio', hint: 'con vocabulario fuera del camino', color: '#e8590c' },
+  6: { name: 'N5', hint: 'tras las unidades 10–15, como el 読解 del examen', color: '#2b8a3e' },
 };
 
 export const allReadings = () => READINGS;

@@ -16,7 +16,7 @@ function defaults(name, avatar) {
     id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     name, avatar: avatar || '🦊', created: Date.now(),
     xp: 0, streak: { n: 0, last: null }, days: {},
-    lessons: {}, tests: {}, words: {}, kana: {}, kanji: {}, readings: {},
+    lessons: {}, tests: {}, words: {}, kana: {}, kanji: {}, readings: {}, exams: [], examSeen: {},
     settings: { furigana: 'auto', spacing: true, romaji: true, rate: 0.85, sound: true, goal: 50, unlockAll: false, readMode: 'read' },
   };
 }
@@ -165,5 +165,18 @@ export function saveReading(id, score, total, listened = false) {
   const prev = p.readings[id];
   p.readings[id] = { best: Math.max(score, prev?.best || 0), total, at: Date.now(), tries: (prev?.tries || 0) + 1,
     listened: !!prev?.listened || (listened && score === total) };
+  emit();
+}
+
+// ───── Simulacro ─────
+export const exams = () => me()?.exams || [];
+export const examSeen = () => me()?.examSeen || {};
+// Guarda el resultado y cuenta los ítems vistos (los próximos simulacros prefieren los menos vistos)
+export function saveExam(result, ids) {
+  const p = me(); if (!p) return;
+  (p.exams ||= []).push(result);
+  if (p.exams.length > 50) p.exams = p.exams.slice(-50);
+  p.examSeen ||= {};
+  for (const id of ids) p.examSeen[id] = (p.examSeen[id] || 0) + 1;
   emit();
 }

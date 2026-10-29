@@ -38,13 +38,20 @@ function wantRuby(seg) {
 }
 
 // Texto japonés tokenizado → HTML con palabras clicables
-export function jp(text, { cls = '', plain = false, mark = 'none', blank = '' } = {}) {
+//   ruby: función (segmento de kanji) → ¿mostrar furigana? (por defecto, según los ajustes)
+//   under: token (tal cual se escribió) que va subrayado y sin furigana (preguntas de examen)
+//   blank: HTML para ＿, o función (n.º de hueco) → HTML
+export function jp(text, { cls = '', plain = false, mark = 'none', blank = '', ruby = wantRuby, under = '' } = {}) {
   const toks = tokenize(text);
   const spacing = S.settings().spacing;
+  let nb = 0, underDone = false;
   const out = toks.map((t, i) => {
-    if (t.blank) return blank || '<span class="blank">　</span>';
+    if (t.blank) { const n = nb++; return (typeof blank === 'function' ? blank(n) : blank) || '<span class="blank">　</span>'; }
     if (t.punct) return `<span class="pu">${esc(t.surface)}</span>`;
-    const inner = rubyParts(t.surface, t.reading).map(([s, rt]) => rt && wantRuby(s) ? `<ruby>${esc(s)}<rt>${esc(rt)}</rt></ruby>` : esc(s)).join('');
+    const ul = under && !underDone && t.raw === under;
+    if (ul) underDone = true;
+    let inner = rubyParts(t.surface, t.reading).map(([s, rt]) => rt && !ul && ruby(s) ? `<ruby>${esc(s)}<rt>${esc(rt)}</rt></ruby>` : esc(s)).join('');
+    if (ul) inner = `<u class="ul">${inner}</u>`;
     if (plain) return `<span class="wd">${inner}</span>`;
     const id = t.entry?.id || '';
     let st = '';
@@ -58,8 +65,11 @@ export function jp(text, { cls = '', plain = false, mark = 'none', blank = '' } 
 export function rich(s) {
   if (!s) return '';
   const parts = String(s).split(/(\{[^}]+\})/g);
-  return parts.map(p => p.startsWith('{') && p.endsWith('}') ? jp(p.slice(1, -1)) :
-    esc(p).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>').replace(/\n/g, '<br>')).join('');
+  // ** se marca aparte para que la negrita pueda abarcar texto japonés: **número + {月}**
+  const html = parts.map(p => p.startsWith('{') && p.endsWith('}') ? jp(p.slice(1, -1)) :
+    esc(p).replace(/\*\*/g, '\u0001').replace(/\*(.+?)\*/g, '<i>$1</i>').replace(/\n/g, '<br>')).join('');
+  let open = false;
+  return html.replace(/\u0001/g, () => (open = !open) ? '<b>' : '</b>') + (open ? '</b>' : '');
 }
 
 // Botón de audio para texto japonés tokenizado (voice: 'f' | 'm')

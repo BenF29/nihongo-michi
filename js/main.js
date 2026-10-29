@@ -7,6 +7,7 @@ import { ENTRIES, lookup } from './dict.js';
 import * as S from './state.js';
 import { play } from './lesson.js';
 import { renderList, renderReading } from './reader.js';
+import { renderExamHome, playExam } from './exam.js';
 import { ttsAvailable, hasJapaneseVoice } from './tts.js';
 import { esc, $, $$, jp, rich, toast, POS, closePop, WORD_LESSON } from './ui.js';
 
@@ -18,7 +19,7 @@ function shell(active, inner) {
   const due = S.dueWords().length;
   const goal = S.settings().goal, today = S.xpToday();
   const pct = Math.min(100, Math.round(100 * today / goal));
-  const nav = [['camino', '道', 'Camino'], ['lecturas', '読', 'Lecturas'], ['repaso', '復', 'Repaso'], ['palabras', '辞', 'Palabras']];
+  const nav = [['camino', '道', 'Camino'], ['lecturas', '読', 'Lecturas'], ['repaso', '復', 'Repaso'], ['palabras', '辞', 'Palabras'], ['examen', '試', 'Examen']];
   return `<header class="top">
       <a class="logo" href="#/camino"><span lang="ja">道</span> Michi</a>
       <nav class="nav">${nav.map(([k, ic, t]) => `<a href="#/${k}" class="${active === k ? 'on' : ''}"><span class="nic" lang="ja">${ic}</span><span class="nt">${t}</span>${k === 'repaso' && due ? `<span class="badge">${due}</span>` : ''}</a>`).join('')}</nav>
@@ -85,6 +86,7 @@ function viewPath() {
           <span class="nb" lang="ja">${d ? '✓' : un ? esc(l.icon) : '🔒'}</span><span class="nl">${esc(l.title)}</span>${cur ? '<span class="here">¡Aquí!</span>' : ''}</button>`;
       }).join('')}</div></div>`;
   }
+  html += `<a class="callout link center" href="#/examen"><b>🎓 Meta: el JLPT N5.</b> Al terminar el camino, ponte a prueba con el simulacro del examen.</a>`;
   html += `<p class="center muted small"><a href="#/metodo">¿Cómo funciona este método?</a></p></section>`;
   app.innerHTML = shell('camino', html);
   $$('.node', app).forEach(b => b.onclick = () => preview(LESSONS[LESSON_INDEX[b.dataset.l]]));
@@ -267,6 +269,8 @@ function viewMethod() {
     <p>La comprensión cómoda de un texto se asocia a conocer alrededor del 98 % de sus palabras (Hu y Nation, 2000), aunque estudios posteriores muestran una curva más que un umbral exacto (Schmitt, Jiang y Grabe, 2011). Cada lectura te muestra qué porcentaje ya conoces y te recomienda las que están en tu zona; las palabras nuevas quedan subrayadas y puedes añadirlas a tu repaso.</p>
     <h3>Siempre puedes consultar</h3>
     <p>Todas las palabras japonesas son clicables: significado, lectura, forma del verbo y kanji que la componen. La furigana aparece solo sobre los kanji que aún no aprendes, para que poco a poco leas sin ayuda.</p>
+    <h3>Todo el JLPT N5</h3>
+    <p>El camino cubre el vocabulario (unas 800 palabras), los kanji y la gramática del Examen de Aptitud en Japonés, nivel N5. La sección <b>Examen</b> tiene un simulacro con el formato real: <span lang="ja">文字・語彙</span>, <span lang="ja">文法・読解</span> y <span lang="ja">聴解</span>, con el tiempo de cada sección y sin feedback hasta el final, porque practicar con el formato del examen reduce la sorpresa el día de la prueba. Al terminar ves un puntaje estimado en la escala del JLPT y qué lecciones repasar según lo que fallaste.</p>
     <h3>Saltar lo que ya sabes</h3>
     <p>Si ya conoces una unidad, "⏩ Ya lo sé" te da una prueba corta: si la apruebas, avanzas directamente.</p>
     <h3>Voces</h3>
@@ -311,6 +315,12 @@ function route() {
     }
     case 'lecturas': app.innerHTML = shell('lecturas', '<div id="rl"></div>'); return renderList($('#rl'));
     case 'lectura': app.innerHTML = shell('lecturas', '<div id="rd"></div>'); return renderReading($('#rd'), arg);
+    case 'examen': app.innerHTML = shell('examen', '<div id="ex"></div>'); return renderExamHome($('#ex'));
+    case 'simulacro': case 'practica': {
+      const mode = view === 'practica' ? 'practice' : arg === 'completo' ? 'full' : 'section';
+      app.innerHTML = '<div id="player"></div>';
+      return playExam($('#player'), { mode, arg: mode === 'full' ? '' : arg, onExit: () => go('#/examen') });
+    }
     case 'repaso': return viewReview();
     case 'palabras': return viewWords(arg || 'vocab');
     case 'perfil': return viewProfile();

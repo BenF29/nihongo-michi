@@ -98,27 +98,40 @@ export function inflectionLabel(surface, e) {
   if (p === 'v1' || p === 'v5' || p === 'v3') {
     const rules = [
       ['ませんでした', 'pasado negativo cortés'], ['ました', 'pasado cortés'], ['ません', 'negativo cortés'],
+      ['ましょうか', '¿…? (ofrecer o proponer: ましょうか)'],
       ['ましょう', '¡hagámoslo! (ましょう)'], ['ませんか', 'invitación (¿por qué no…?)'], ['ます', 'forma cortés (ます)'],
+      ['なければなりません', 'tener que… (なければなりません)'], ['なければ', 'tener que… (なければ)'],
+      ['なくても', 'no hace falta… (なくても)'], ['ないで', 'sin… / no… (ないで)'],
+      ['ながら', 'mientras… (ながら)'], ['たり', 'cosas como… (たり)'], ['だり', 'cosas como… (たり)'],
       ['たかった', 'quería… (たかった)'], ['たくない', 'no quiero… (たくない)'], ['たい', 'quiero… (たい)'],
       ['ています', 'forma て + います (en curso / estado)'], ['でいます', 'forma て + います (en curso / estado)'],
       ['ている', 'forma て + いる (en curso / estado)'], ['でいる', 'forma て + いる (en curso / estado)'],
       ['ていました', 'estaba …-ando'], ['でいました', 'estaba …-ando'],
       ['てください', 'forma て + ください (por favor)'], ['でください', 'forma て + ください (por favor)'],
       ['なかった', 'pasado negativo (informal)'], ['ない', 'negativo (informal)'],
+      ['てから', 'forma て + から (después de…)'], ['でから', 'forma て + から (después de…)'],
+      ['てあげる', 'hacer algo por otro (てあげる)'], ['てもらう', 'recibir un favor (てもらう)'], ['てくれる', 'alguien hace algo por mí (てくれる)'],
       ['て', 'forma て'], ['で', 'forma て'], ['た', 'pasado (informal)'], ['だ', 'pasado (informal)'],
       ['よう', 'volitivo informal (hagamos…)'], ['ろう', 'volitivo informal (hagamos…)'],
     ];
     for (const [end, lab] of rules) if (s.endsWith(end)) return lab;
     return 'forma conjugada';
   }
+  if (p === 'cop') {
+    const rules = [['でしょう', 'probablemente (でしょう)'], ['だろう', 'probablemente (だろう)'], ['じゃなかった', 'pasado negativo (informal)'],
+      ['じゃありませんでした', 'pasado negativo cortés'], ['でした', 'pasado cortés'], ['だった', 'pasado (informal)'], ['で', 'forma て (y…)']];
+    for (const [end, lab] of rules) if (s.endsWith(end)) return lab;
+  }
   if (p === 'adj-i') {
     if (s.endsWith('くなかった')) return 'pasado negativo';
     if (s.endsWith('くない')) return 'negativo';
     if (s.endsWith('かった')) return 'pasado';
     if (s.endsWith('くて')) return 'forma て (y…)';
-    if (s.endsWith('く')) return 'adverbio (〜く)';
+    if (s.endsWith('く')) return 'forma 〜く (adverbio; + なる = volverse…)';
   }
-  if (p === 'adj-na' && s.endsWith('に')) return 'adverbio (〜に)';
+  if (p === 'adj-na' && s.endsWith('に')) return 'forma 〜に (adverbio; + なる = volverse…)';
+  if (p === 'adj-na' && s.endsWith('で')) return 'forma て (y…)';
+  if (p === 'adj-na' && s.endsWith('だった')) return 'pasado (informal)';
   return 'forma conjugada';
 }
 
@@ -203,7 +216,7 @@ export function audioKey(text, voice = 'f') {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 // Personajes con voz masculina en los diálogos
-export const MALE = new Set(['ケン', 'はると', 'ルイス', '田中', 'お父さん', '父', '兄', '弟', '店員', 'おじいさん']);
+export const MALE = new Set(['男の人', 'ケン', 'はると', 'ルイス', '田中', 'お父さん', '父', '兄', '弟', '店員', 'おじいさん']);
 export const voiceOf = who => MALE.has(who) ? 'm' : 'f';
 // Las palabras sueltas usan siempre la voz principal; las oraciones se reparten entre las dos
 // voces (escuchar a varios hablantes entrena mejor el oído). Cada lectura tiene un solo narrador.

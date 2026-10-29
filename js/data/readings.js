@@ -1,5 +1,5 @@
 // Lecturas graduadas. Formato: docs/FORMATO.md
-// Nivel 1: tras la unidad 3 · 2: tras la unidad 5 · 3: tras la unidad 7 · 4: tras la unidad 9 · 5: intermedio.
+// Nivel 1: tras la unidad 3 · 2: tras la unidad 5 · 3: tras la unidad 7 · 4: tras la unidad 9 · 5: intermedio · 6: N5 (tras las unidades 10–15).
 // `ev` = índice global (desde 0) de la oración con la respuesta.
 
 export default [
@@ -144,7 +144,7 @@ export default [
       ['日本 の 映画 です 。', 'Es una película japonesa.'],                                               // 2
       ['映画 は 六 時 半 から です 。', 'La película es a las seis y media.'],                               // 3
       ['五 時 に えき で 会いませんか=会う 。', '¿Nos juntamos a las cinco en la estación?'],                 // 4
-      ['九 時 に レストラン で ばんごはん を 食べましょう=食べる 。', 'A las nueve cenemos en un restaurante.'], // 5
+      ['九|く=九 時 に レストラン で ばんごはん を 食べましょう=食べる 。', 'A las nueve cenemos en un restaurante.'], // 5
       ['ゆい より', 'De Yui'],                                                                               // 6
     ], [
       ['ゆい さん 、 ありがとうございます 。', 'Yui, muchas gracias.'],                                     // 7
@@ -410,7 +410,7 @@ export default [
 
   // ═══════════════ NIVEL 5 ═══════════════
   {
-    id: 'r17', level: 5, title: 'ももたろう', es: 'Momotaro, el niño durazno', after: 'u9l3', topic: 'cuento popular',
+    id: 'r17', level: 5, title: 'ももたろう', es: 'Momotaro, el niño durazno', after: 'u15l3', topic: 'cuento popular',
     paras: [[
       ['むかし むかし 、 おじいさん と おばあさん が いました=いる 。', 'Había una vez un abuelo y una abuela.'],          // 0
       ['二人 に は 子ども が いませんでした=いる 。', 'Ellos no tenían hijos.'],                                       // 1
@@ -452,14 +452,14 @@ export default [
     ],
   },
   {
-    id: 'r18', level: 5, title: '日本 の きせつ', es: 'Las estaciones en Japón', after: 'u9l3', topic: 'cultura',
+    id: 'r18', level: 5, title: '日本 の きせつ', es: 'Las estaciones en Japón', after: 'u11l3', topic: 'cultura',
     paras: [[
       ['日本 に は 四つ の きせつ が あります=ある 。 春 、 夏 、 秋 、 冬 です 。', 'Japón tiene cuatro estaciones: primavera, verano, otoño e invierno.'], // 0
       ['春 は 三 月 から 五 月 まで です 。', 'La primavera va de marzo a mayo.'],                                         // 1
       ['春 に は さくら の 花 が さきます=さく 。', 'En primavera florecen los cerezos.'],                                  // 2
       ['日本 の 人 は さくら の 木 の 下 で お花見 を します=する 。', 'Los japoneses hacen hanami bajo los cerezos.'],         // 3
       ['家族 や ともだち と いっしょに おべんとう を 食べたり=食べる:forma-たり 、 おさけ を 飲んだり=飲む:forma-たり します=する 。', 'Con la familia o los amigos comen bento, toman sake, etc.'], // 4
-      ['さくら の 花 は 一 週間 ぐらい で ちります=ちる 。', 'Las flores de cerezo caen en más o menos una semana.'],          // 5
+      ['さくら の 花 は 一|いっ=一 週間 ぐらい で ちります=ちる 。', 'Las flores de cerezo caen en más o menos una semana.'],          // 5
       ['みじかい から=から#porque 、 もっと きれい だ と 思う 人 が 多い です 。', 'Mucha gente piensa que, porque dura poco, es aún más bonita.'], // 6
     ], [
       ['夏 は とても 暑い です 。', 'El verano es muy caluroso.'],                                                       // 7
@@ -478,7 +478,7 @@ export default [
     ],
   },
   {
-    id: 'r19', level: 5, title: '雨 の 日 の かさ', es: 'El paraguas de un día de lluvia', after: 'u9l3', topic: 'cuento',
+    id: 'r19', level: 5, title: '雨 の 日 の かさ', es: 'El paraguas de un día de lluvia', after: 'u14l2', topic: 'cuento',
     paras: [[
       ['ある=ある#cierto 雨 の 日 、 ゆい は えき の 前 で こまって=こまる いました=いる 。', 'Un día de lluvia, Yui no sabía qué hacer frente a la estación.'], // 0
       ['かさ を わすれました=わすれる 。', 'Había olvidado su paraguas.'],                                                 // 1
@@ -509,6 +509,237 @@ export default [
       { t: 'text', q: '¿Qué llevó Yui además del paraguas? (escribe en katakana)', qjp: 'ゆい は かさ と 何|なに を 持って=持つ 行きました=行く か 。', accept: ['ケーキ'], why: '「かさとケーキを持って」.', ev: 8 },
       { t: 'tf', q: 'Después de eso, Yui no volvió a ver a la señora.', a: false, why: '「ときどきおばあさんに会いに行きます」: la visita a veces.', ev: 16 },
       { t: 'mc', q: '¿Cuál es la idea principal del final?', opts: ['Un pequeño gesto las hizo amigas', 'No hay que salir cuando llueve', 'Los hospitales son tranquilos'], a: 0, why: '「雨の日のかさが、二人をともだちにしました」.', ev: 17 },
+    ],
+  },
+  // ═══════════════ NIVEL 6 · N5 ═══════════════
+  {
+    id: 'r20', level: 6, title: 'ケン から の メール', es: 'Un correo de Ken', after: 'u10l3', topic: 'invitación',
+    paras: [[
+      ['アナ さん 、 こんにちは 。', 'Hola, Ana.'],                                                                       // 0
+      ['来週 の 土曜日 、 六 月 七日 は わたし の 誕生日 です 。', 'El próximo sábado, 7 de junio, es mi cumpleaños.'],          // 1
+      ['うち で 小さい パーティー を します=する 。', 'Voy a hacer una pequeña fiesta en mi casa.'],                          // 2
+      ['アナ さん も 来ませんか=来る 。', '¿No quieres venir tú también?'],                                                  // 3
+    ], [
+      ['パーティー は 午後 四|よ 時 から 八 時 ごろ まで です 。', 'La fiesta es desde las cuatro de la tarde hasta más o menos las ocho.'], // 4
+      ['ともだち が 六人|ろくにん=にん 来ます=来る 。', 'Vienen seis amigos.'],                                              // 5
+      ['母 が カレー と ケーキ を 作ります=作る 。', 'Mi mamá va a preparar curry y una torta.'],                             // 6
+      ['飲み物 は ジュース や 紅茶 など が あります=ある 。', 'De bebidas hay jugo, té negro y otras cosas.'],                  // 7
+    ], [
+      ['わたし の うち は 駅 から 歩いて=歩く 十|じゅっ=十 分|ぷん=分 ぐらい です 。', 'Mi casa queda a unos diez minutos a pie de la estación.'], // 8
+      ['駅 の 前 に 大きい デパート が あります=ある 。', 'Frente a la estación hay una tienda por departamentos grande.'],     // 9
+      ['三 時 半 に デパート の 前 で 会いましょう=会う 。', 'Juntémonos a las tres y media frente a la tienda.'],             // 10
+      ['ゆい さん と はると さん も 来ます=来る よ 。', 'Yui y Haruto también vienen.'],                                     // 11
+      ['五日 まで に メール を ください 。', 'Mándame un correo a más tardar el día 5, por favor.'],                          // 12
+      ['じゃあ 、 また 。 ケン', 'Bueno, nos vemos. Ken'],                                                                 // 13
+    ]],
+    questions: [
+      { t: 'mc', q: '¿Cuándo es la fiesta?', qjp: 'パーティー は いつ です か 。', opts: ['El sábado 7 de junio', 'El domingo 8 de junio', 'El sábado 5 de junio'], a: 0, why: '「来週の土曜日、六月七日」: 七日 (なのか) = día 7. El día 5 (五日) es el plazo para responder.', ev: [1, 2] },
+      { t: 'tf', q: 'La fiesta termina más o menos a las ocho.', qjp: 'パーティー は 八 時 ごろ まで です か 。', a: true, why: '「四時から八時ごろまで」: ごろ = alrededor de (hora aproximada).', ev: 4 },
+      { t: 'mc', q: '¿Cuántos amigos vienen a la fiesta?', qjp: 'ともだち は 何人|なんにん=にん 来ます=来る か 。', opts: ['Seis', 'Cuatro', 'Ocho'], a: 0, why: '「ともだちが六人来ます」: 六人 = ろくにん.', ev: 5 },
+      { t: 'mc', q: '¿Dónde y a qué hora se juntan Ken y Ana?', qjp: 'ケン さん と アナ さん は 何|なん=なん 時 に どこ で 会います=会う か 。', opts: ['A las 3:30, frente a la tienda por departamentos', 'A las 4:00, en la casa de Ken', 'A las 3:30, dentro de la estación'], a: 0, why: '「三時半にデパートの前で会いましょう」. La fiesta empieza a las cuatro y la casa queda a diez minutos.', ev: 10 },
+      { t: 'tf', q: 'La casa de Ken queda lejos de la estación.', a: false, why: '「駅から歩いて十分ぐらいです」: a unos diez minutos a pie.', ev: 8 },
+      { t: 'text', q: '¿Qué va a preparar la mamá de Ken además del curry? (escribe en katakana)', qjp: 'お母さん は カレー と 何|なに を 作ります=作る か 。', accept: ['ケーキ'], why: '「母がカレーとケーキを作ります」. Ken dice 母 porque habla de su propia mamá.', ev: 6 },
+    ],
+  },
+  {
+    id: 'r21', level: 6, title: 'サンティアゴ と 東京', es: 'Santiago y Tokio', after: 'u11l3', topic: 'comparación',
+    paras: [[
+      ['わたし の 名前 は アナ です 。', 'Me llamo Ana.'],                                                                   // 0
+      ['チリ の サンティアゴ から 来ました=来る 。 今 は 東京 に 住んで=住む います=いる 。', 'Vengo de Santiago de Chile. Ahora vivo en Tokio.'], // 1
+      ['東京 は サンティアゴ より 大きくて=大きい 、 人 も 多い です 。', 'Tokio es más grande que Santiago y además tiene más gente.'], // 2
+      ['東京 の 電車 は とても 便利 です 。', 'Los trenes de Tokio son muy prácticos.'],                                      // 3
+      ['でも 、 朝 は 人 が 多くて=多い 大変 です 。', 'Pero en la mañana hay mucha gente y es pesado.'],                      // 4
+    ], [
+      ['チリ と 日本 は 季節 が 違います=違う 。', 'En Chile y en Japón las estaciones son distintas.'],                       // 5
+      ['日本 で は 、 八 月 は 夏 です 。', 'En Japón, agosto es verano.'],                                                // 6
+      ['でも 、 チリ で は 冬 です 。', 'Pero en Chile es invierno.'],                                                    // 7
+      ['東京 の 夏 は サンティアゴ の 夏 より 暑い です 。', 'El verano de Tokio es más caluroso que el de Santiago.'],          // 8
+      ['サンティアゴ で は 、 夏 の 夜 は すずしい です 。', 'En Santiago, las noches de verano son frescas.'],                 // 9
+    ], [
+      ['わたし は 東京 の 秋 が いちばん 好き です 。', 'Lo que más me gusta de Tokio es el otoño.'],                          // 10
+      ['十一|じゅういち=十 月 ごろ 、 木 の 葉 が 赤く=赤い なります=なる 。', 'Hacia noviembre, las hojas de los árboles se ponen rojas.'], // 11
+      ['それから 、 だんだん 寒く=寒い なります=なる 。', 'Después, poco a poco empieza a hacer frío.'],                       // 12
+      ['東京 の 冬 は よく 晴れて=晴れる 、 空 が きれい です 。', 'En invierno, en Tokio suele estar despejado y el cielo es bonito.'], // 13
+      ['サンティアゴ と 東京 、 どちら も わたし の 好き な 町 です 。', 'Santiago y Tokio: las dos son ciudades que me gustan.'], // 14
+    ]],
+    questions: [
+      { t: 'mc', q: '¿Qué ciudad es más grande?', qjp: 'サンティアゴ と 東京 と どちら が 大きい です か 。', opts: ['Tokio', 'Santiago', 'Son del mismo tamaño'], a: 0, why: '「東京はサンティアゴより大きくて」: A は B より 〜 = A es más 〜 que B.', ev: 2 },
+      { t: 'mc', q: '¿Por qué los trenes de Tokio son pesados en la mañana?', qjp: 'どうして 朝 の 電車 は 大変 です か 。', opts: ['Porque hay mucha gente', 'Porque son lentos', 'Porque son caros'], a: 0, why: '「朝は人が多くて大変です」: 〜くて también puede dar la causa.', ev: 4 },
+      { t: 'tf', q: 'En Chile, agosto es verano.', qjp: 'チリ で は 八 月 は 夏 です か 。', a: false, why: 'En Japón agosto es verano, 「でも、チリでは冬です」: las estaciones están al revés.', ev: [6, 7] },
+      { t: 'tf', q: 'Según Ana, el verano de Santiago es más caluroso que el de Tokio.', a: false, why: '「東京の夏はサンティアゴの夏より暑いです」: es al revés. Además, en Santiago las noches son frescas.', ev: [8, 9] },
+      { t: 'mc', q: '¿Qué estación de Tokio le gusta más a Ana?', qjp: 'アナ さん は 東京 の どの 季節 が いちばん 好き です か 。', opts: ['El otoño', 'El verano', 'El invierno'], a: 0, why: '「東京の秋がいちばん好きです」: いちばん = el más.', ev: 10 },
+      { t: 'text', q: '¿De qué color se ponen las hojas en noviembre? (escribe en japonés)', qjp: '十一|じゅういち=十 月 ごろ 、 木 の 葉 は 何|なに 色 に なります=なる か 。', accept: ['あか', '赤', 'あかい', '赤い', 'あかく', '赤く'], why: '「木の葉が赤くなります」: 赤い → 赤く なる = volverse rojo.', ev: 11 },
+    ],
+  },
+  {
+    id: 'r22', level: 6, title: 'ゆい の 日記', es: 'El diario de Yui', after: 'u12l3', topic: 'diario',
+    paras: [[
+      ['六 月 八日 （ 日曜日 ） 晴れ', '8 de junio (domingo). Despejado.'],                                                // 0
+      ['今日 は 朝 七|しち 時 に 起きた=起きる 。', 'Hoy me levanté a las siete de la mañana.'],                              // 1
+      ['朝ごはん を 食べた=食べる 後 で 、 犬 と 公園 を 散歩 した=する 。', 'Después de desayunar, salí a pasear por el parque con el perro.'], // 2
+      ['公園 で は 子ども が 遊んだり=遊ぶ:forma-たり 走ったり=走る:forma-たり して=する いた=いる 。', 'En el parque había niños jugando y corriendo.'], // 3
+      ['天気 が よくて=いい 、 とても 暖かかった=暖かい 。', 'Hacía buen tiempo y estaba muy agradable.'],                    // 4
+    ], [
+      ['昼 は ケン と 映画館 で 映画 を 見た=見る 。', 'Al mediodía vi una película en el cine con Ken.'],                     // 5
+      ['アメリカ の 古い 映画 だった=だ 。', 'Era una película estadounidense antigua.'],                                     // 6
+      ['ケン は 「 おもしろかった=おもしろい 」 と 言った=言う 。', 'Ken dijo: "Estuvo entretenida".'],                       // 7
+      ['でも 、 わたし は あまり おもしろくなかった=おもしろい 。', 'Pero a mí no me pareció muy entretenida.'],              // 8
+      ['映画 の 後 で 、 二人 で ラーメン を 食べた=食べる 。 とても おいしかった=おいしい 。', 'Después de la película, comimos ramen los dos. Estaba muy rico.'], // 9
+    ], [
+      ['夕方 、 うち へ 帰って=帰る から 、 しゅくだい を した=する 。', 'En la tarde, después de volver a casa, hice la tarea.'], // 10
+      ['でも 、 漢字 の しゅくだい は まだ 終わって=終わる いない=いる 。', 'Pero la tarea de kanji todavía no la termino.'],     // 11
+      ['今日 は 少し 疲れた=疲れる 。', 'Hoy estoy un poco cansada.'],                                                     // 12
+      ['明日 は 早く=早い 起きて=起きる 、 漢字 を 練習 する 。', 'Mañana me voy a levantar temprano y voy a practicar kanji.'], // 13
+    ]],
+    questions: [
+      { t: 'mc', q: '¿Qué hizo Yui después de desayunar?', qjp: 'ゆい さん は 朝ごはん を 食べた=食べる 後 で 、 何|なに を しました=する か 。', opts: ['Paseó con el perro por el parque', 'Fue al cine con Ken', 'Hizo la tarea'], a: 0, why: '「朝ごはんを食べた後で、犬と公園を散歩した」: Verbo-た 後で = después de….', ev: 2 },
+      { t: 'mc', q: '¿Qué hacían los niños en el parque?', qjp: '公園 で 子ども は 何|なに を して=する いました=いる か 。', opts: ['Jugaban y corrían', 'Cantaban y bailaban', 'Leían y dibujaban'], a: 0, why: '「遊んだり走ったりしていた」: 〜たり〜たり = cosas como….', ev: 3 },
+      { t: 'tf', q: 'A Yui le gustó mucho la película.', qjp: 'ゆい さん は 映画 が おもしろかった=おもしろい です か 。', a: false, why: 'Ken dijo que estuvo entretenida, 「でも、わたしはあまりおもしろくなかった」: あまり + negativo = no mucho.', ev: [7, 8] },
+      { t: 'text', q: '¿Qué comieron después de la película? (escribe en katakana)', qjp: '映画 の 後 で 、 何|なに を 食べました=食べる か 。', accept: ['ラーメン'], why: '「二人でラーメンを食べた」.', ev: 9 },
+      { t: 'tf', q: 'Yui ya terminó toda la tarea.', qjp: 'ゆい さん は もう しゅくだい を 全部 しました=する か 。', a: false, why: '「漢字のしゅくだいはまだ終わっていない」: まだ〜ていない = todavía no….', ev: 11 },
+    ],
+  },
+  {
+    id: 'r23', level: 6, title: 'クラス の みなさん へ', es: 'A todos los de la clase', after: 'u13l3', topic: 'aviso',
+    paras: [[
+      ['日本 語 クラス の みなさん 、 先生 の 田中 です 。', 'A todos los de la clase de japonés: les escribe el profesor Tanaka.'], // 0
+      ['来週 から 新しい 教室 で 授業 を します=する 。', 'Desde la próxima semana tendremos clases en una sala nueva.'],      // 1
+      ['新しい 教室 は 三階|さんがい=階 の いちばん 右 の 部屋 です 。', 'La sala nueva es la que está más a la derecha en el tercer piso.'], // 2
+      ['エレベーター は 小さい です から=から#porque 、 階段 を 使って=使う ください 。', 'El ascensor es pequeño, así que usen la escalera, por favor.'], // 3
+    ], [
+      ['教室 で は ごはん や お菓子 を 食べないで=食べる ください 。', 'En la sala, por favor, no coman comida ni dulces.'],      // 4
+      ['飲み物 は 飲んで=飲む も いい です 。', 'Las bebidas sí se pueden tomar.'],                                           // 5
+      ['となり の 教室 で も 授業 が あります=ある から=から#porque 、 廊下 で 大きい 声 で 話さないで=話す ください 。', 'En la sala de al lado también hay clases, así que no hablen fuerte en el pasillo, por favor.'], // 6
+      ['帰る 前 に 、 まど を 閉めて=閉める 、 電気 を 消して=消す ください 。', 'Antes de irse, cierren las ventanas y apaguen la luz, por favor.'], // 7
+    ], [
+      ['毎日 、 授業 の 前 に しゅくだい を 出さなければなりません=出す 。', 'Todos los días tienen que entregar la tarea antes de la clase.'], // 8
+      ['月曜日 に は 漢字 の テスト が あります=ある 。', 'Los lunes hay prueba de kanji.'],                                  // 9
+      ['授業 を 休む 人 は 、 朝 九|く 時 まで に 学校 に 電話 を しなければなりません=する 。', 'Quienes falten a clases tienen que llamar a la escuela a más tardar a las nueve de la mañana.'], // 10
+      ['質問 が ある 人 は 、 授業 の 後 で 先生 に 聞いて=聞く ください 。', 'Quienes tengan preguntas, háganlas al profesor después de clases.'], // 11
+      ['よろしくおねがいします 。', 'Gracias por su colaboración.'],                                                      // 12
+    ]],
+    questions: [
+      { t: 'mc', q: '¿Dónde está la sala nueva?', qjp: '新しい 教室 は どこ です か 。', opts: ['En el tercer piso, la de más a la derecha', 'En el tercer piso, la de más a la izquierda', 'En el primer piso, al lado de la escalera'], a: 0, why: '「三階のいちばん右の部屋です」: 三階 (さんがい) = tercer piso; いちばん右 = la de más a la derecha.', ev: 2 },
+      { t: 'tf', q: 'En la sala se pueden tomar bebidas.', qjp: '教室 で 飲み物 を 飲んで=飲む も いい です か 。', a: true, why: '「飲み物は飲んでもいいです」. Lo que no se puede es comer: 「食べないでください」.', ev: [4, 5] },
+      { t: 'tf', q: 'Se puede hablar fuerte en el pasillo porque no hay otras clases.', a: false, why: '「となりの教室でも授業がありますから、…大きい声で話さないでください」: 〜ないでください = por favor, no….', ev: 6 },
+      { t: 'mc', q: '¿Qué hay que hacer antes de irse?', qjp: '帰る 前 に 何|なに を しなければなりません=する か 。', opts: ['Cerrar las ventanas y apagar la luz', 'Limpiar la sala', 'Entregar la tarea'], a: 0, why: '「まどを閉めて、電気を消してください」. La tarea se entrega antes de la clase, no al irse.', ev: 7 },
+      { t: 'mc', q: '¿Qué tiene que hacer quien falta a clases?', qjp: '授業 を 休む 人 は 何|なに を しなければなりません=する か 。', opts: ['Llamar a la escuela antes de las nueve', 'Escribirle una carta al profesor', 'Dar la prueba de kanji el lunes'], a: 0, why: '「朝九時までに学校に電話をしなければなりません」: 〜なければなりません = tener que….', ev: 10 },
+      { t: 'text', q: '¿Qué hay los lunes? (escribe en japonés)', qjp: '月曜日 に は 何|なに が あります=ある か 。', accept: ['かんじのテスト', '漢字のテスト', 'テスト', 'かんじ の テスト'], why: '「月曜日には漢字のテストがあります」.', ev: 9 },
+    ],
+  },
+  {
+    id: 'r24', level: 6, title: 'はじめまして 、 マリア です', es: 'Mucho gusto, soy María', after: 'u13l3', topic: 'presentación',
+    paras: [[
+      ['はじめまして 。 わたし は マリア です 。', 'Mucho gusto. Me llamo María.'],                                       // 0
+      ['メキシコ 人|じん=じん の 留学生 です 。', 'Soy una estudiante extranjera mexicana.'],                                // 1
+      ['去年 の 九|く=九 月 に 日本 へ 来ました=来る 。', 'Llegué a Japón en septiembre del año pasado.'],                          // 2
+      ['今 は 京都 の 大学 で 日本 語 を 勉強 して=する います=いる 。', 'Ahora estudio japonés en una universidad de Kioto.'],   // 3
+      ['メキシコ で は 英語 の 先生 でした=です:pasado 。', 'En México era profesora de inglés.'],                           // 4
+      ['英語 と スペイン 語 が できます=できる 。', 'Sé inglés y español.'],                                               // 5
+      ['でも 、 日本 語 は まだ 下手 です 。', 'Pero todavía soy mala para el japonés.'],                                    // 6
+      ['ひらがな と カタカナ は わかります=わかる 。 漢字 は 二百|にひゃく=百 ぐらい 覚えました=覚える 。', 'Entiendo el hiragana y el katakana. De kanji, he aprendido unos doscientos.'], // 7
+    ], [
+      ['日本 に 来て=来る から 、 いろいろ な 町 へ 行きました=行く 。', 'Desde que llegué a Japón, he ido a varias ciudades.'], // 8
+      ['東京 や 大阪 へ 行った=行く こと が あります=ある 。', 'He ido a Tokio, a Osaka y a otros lugares.'],                  // 9
+      ['冬 に は 北 の 山 で 初めて スキー を しました=する 。', 'En invierno esquié por primera vez en una montaña del norte.'], // 10
+      ['わたし の 町 は 暖かい から=から#porque 、 雪 が ふりません=ふる 。', 'Mi ciudad es cálida, así que no nieva.'],          // 11
+      ['でも 、 日本 の お酒 は まだ 飲んだ=飲む こと が ありません=ある 。', 'Pero el sake japonés todavía no lo he probado nunca.'], // 12
+    ], [
+      ['わたし は 音楽 が 好き です 。 ギター が 少し できます=できる 。', 'Me gusta la música. Sé tocar un poco la guitarra.'], // 13
+      ['日本 の 歌 も 弾きたい=弾く です 。', 'También quiero tocar canciones japonesas.'],                                   // 14
+      ['どうぞ よろしくおねがいします 。', 'Encantada de conocerlos.'],                                                    // 15
+    ]],
+    questions: [
+      { t: 'mc', q: '¿Qué idiomas sabe María?', qjp: 'マリア さん は 何|なに 語 が できます=できる か 。', opts: ['Inglés y español', 'Japonés y español', 'Solo español'], a: 0, why: '「英語とスペイン語ができます」: Sustantivo が できます = sé / puedo…. El japonés todavía es 下手.', ev: [5, 6] },
+      { t: 'mc', q: '¿Qué hacía María en México?', qjp: 'マリア さん は メキシコ で 何|なん=なん の 先生 でした=です:pasado か 。', opts: ['Era profesora de inglés', 'Era profesora de japonés', 'Era estudiante de música'], a: 0, why: '「メキシコでは英語の先生でした」.', ev: 4 },
+      { t: 'tf', q: 'María ya sabe todos los kanji.', a: false, why: '「漢字は二百ぐらい覚えました」: solo unos doscientos, y dice que todavía es 下手 (mala) para el japonés.', ev: [6, 7] },
+      { t: 'mc', q: '¿Qué hizo por primera vez en invierno?', qjp: 'マリア さん は 冬 に 初めて 何|なに を しました=する か 。', opts: ['Esquiar', 'Ver el mar', 'Tocar la guitarra'], a: 0, why: '「冬には北の山で初めてスキーをしました」: 初めて = por primera vez.', ev: 10 },
+      { t: 'tf', q: 'En la ciudad de María nieva mucho.', a: false, why: '「わたしの町は暖かいから、雪がふりません」.', ev: 11 },
+      { t: 'text', q: '¿Qué cosa japonesa no ha probado nunca? (escribe en japonés)', qjp: 'マリア さん は 何|なに を 飲んだ=飲む こと が ありません=ある か 。', accept: ['おさけ', 'お酒', 'さけ', '酒', 'にほんのおさけ', '日本のお酒'], why: '「日本のお酒はまだ飲んだことがありません」: Verbo-た こと が ありません = nunca he….', ev: 12 },
+    ],
+  },
+  {
+    id: 'r25', level: 6, title: 'デパート で 買い物', es: 'De compras en la tienda', after: 'u14l3', topic: 'compras',
+    paras: [[
+      ['土曜日 、 ケン は ゆい と デパート へ 買い物 に 行きました=行く 。', 'El sábado, Ken fue de compras a una tienda por departamentos con Yui.'], // 0
+      ['来月 は ケン の お父さん の 誕生日 です 。', 'El próximo mes es el cumpleaños del papá de Ken.'],                       // 1
+      ['ケン は お父さん に ネクタイ を 買いたい=買う と 思って=思う いました=いる 。', 'Ken estaba pensando en comprarle una corbata a su papá.'], // 2
+      ['ネクタイ の 店 は 四階|よんかい=階 に ありました=ある 。', 'La tienda de corbatas estaba en el cuarto piso.'],             // 3
+    ], [
+      ['青い ネクタイ は 一万|いちまん=万 二千|にせん=千 円 でした=です:pasado 。', 'La corbata azul costaba doce mil yenes.'], // 4
+      ['ケン の 財布 に は 六千|ろくせん=千 円 しか ありませんでした=ある 。', 'En la billetera de Ken había solo seis mil yenes.'], // 5
+      ['店 の 人 が 「 こちら は いかが です か 。 」 と 言いました=言う 。', 'El vendedor le dijo: "¿Qué le parece esta?".'],     // 6
+      ['それ は 黒い ネクタイ で=だ 、 五千|ごせん=千 円 でした=です:pasado 。', 'Era una corbata negra de cinco mil yenes.'],     // 7
+      ['ケン は その ネクタイ に しました=する 。', 'Ken se decidió por esa corbata.'],                                        // 8
+    ], [
+      ['それから 、 二人 は 七階|ななかい=階 の レストラン で 昼ごはん を 食べました=食べる 。', 'Después, los dos almorzaron en el restaurante del séptimo piso.'], // 9
+      ['ゆい は カレー を 頼みました=頼む 。', 'Yui pidió curry.'],                                                          // 10
+      ['ケン は お金 が 少し しか なかった=ない から=から#porque 、 コーヒー だけ 飲みました=飲む 。', 'Como a Ken le quedaba poco dinero, solo tomó un café.'], // 11
+      ['ゆい は 「 わたし の カレー 、 半分 どうぞ 。 」 と 言いました=言う 。', 'Yui le dijo: "Toma, la mitad de mi curry".'], // 12
+      ['ケン は 「 ありがとう=ありがとうございます:casual 」 と 言って=言う 、 いっしょに 食べました=食べる 。', 'Ken dijo "gracias" y comieron juntos.'], // 13
+    ]],
+    questions: [
+      { t: 'mc', q: '¿Para quién era la corbata?', qjp: 'ケン さん は だれ に ネクタイ を 買いました=買う か 。', opts: ['Para el papá de Ken', 'Para Yui', 'Para el vendedor'], a: 0, why: '「お父さんにネクタイを買いたいと思っていました」: el próximo mes es el cumpleaños de su papá.', ev: [1, 2] },
+      { t: 'mc', q: '¿Cuánto costaba la corbata azul?', qjp: '青い ネクタイ は いくら でした=です:pasado か 。', opts: ['12.000 yenes', '2.000 yenes', '5.000 yenes'], a: 0, why: '「一万二千円」: 一万 = 10.000 y 二千 = 2.000.', ev: 4 },
+      { t: 'tf', q: 'Ken tenía suficiente dinero para la corbata azul.', a: false, why: '「六千円しかありませんでした」: しか + negativo = solo. 6.000 yenes no alcanzan para 12.000.', ev: [4, 5] },
+      { t: 'mc', q: '¿Qué corbata compró al final?', qjp: 'ケン さん は どの ネクタイ に しました=する か 。', opts: ['Una negra de 5.000 yenes', 'Una azul de 12.000 yenes', 'Una negra de 6.000 yenes'], a: 0, why: '「黒いネクタイで、五千円でした」 y 「そのネクタイにしました」: に します = me decido por….', ev: [7, 8] },
+      { t: 'text', q: '¿Qué tomó Ken en el restaurante? (escribe en katakana)', qjp: 'ケン さん は レストラン で 何|なに を 飲みました=飲む か 。', accept: ['コーヒー'], why: '「コーヒーだけ飲みました」: だけ = solo. Le quedaba poco dinero.', ev: 11 },
+    ],
+  },
+  {
+    id: 'r26', level: 6, title: 'なくした 財布', es: 'La billetera perdida', after: 'u15l1', topic: 'direcciones',
+    paras: [[
+      ['昨日 、 アナ は 地下鉄 の 中 で 財布 を なくしました=なくす 。', 'Ayer, Ana perdió su billetera en el metro.'],            // 0
+      ['駅 を 出た=出る とき 、 かばん の 中 に 財布 が ありませんでした=ある 。', 'Cuando salió de la estación, la billetera no estaba en su bolso.'], // 1
+      ['財布 に は お金 と 大切 な 写真 が 入って=入る いました=いる 。', 'En la billetera había dinero y una foto importante.'],   // 2
+      ['アナ は とても 困って=困る 、 駅 の 前 の 交番 へ 行きました=行く 。', 'Ana no sabía qué hacer y fue a la caseta de policía frente a la estación.'], // 3
+    ], [
+      ['おまわりさん 「 どんな 財布 です か 。 」', 'Policía: —¿Cómo es la billetera?'],                                       // 4
+      ['アナ 「 赤くて=赤い 小さい 財布 です 。 」', 'Ana: —Es una billetera roja y pequeña.'],                                // 5
+      ['おまわりさん 「 三十|さんじゅっ=十 分|ぷん=分 前 に 、 公園 の 前 の 交番 から 電話 が ありました=ある 。 赤い 財布 が ある と 言って=言う いました=いる よ 。 」', 'Policía: —Hace treinta minutos llamaron de la caseta que está frente al parque. Dijeron que tienen una billetera roja.'], // 6
+      ['おまわりさん 「 この 道 を まっすぐ 行って=行く 、 二つ目|ふたつめ=二つ:ordinal の 角 を 右 に 曲がって=曲がる ください 。 」', 'Policía: —Siga derecho por esta calle y doble a la derecha en la segunda esquina.'], // 7
+      ['おまわりさん 「 それから 橋 を 渡る と:cuando 、 左 に 公園 が あります=ある 。 交番 は その 前 です 。 」', 'Policía: —Después, al cruzar el puente, a la izquierda hay un parque. La caseta está enfrente.'], // 8
+    ], [
+      ['アナ は 道 を まっすぐ 歩いて=歩く 、 二つ目|ふたつめ=二つ:ordinal の 角 を 右 に 曲がりました=曲がる 。', 'Ana caminó derecho por la calle y dobló a la derecha en la segunda esquina.'], // 9
+      ['橋 を 渡る と:cuando 、 公園 の 前 に 小さい 交番 が ありました=ある 。', 'Al cruzar el puente, frente al parque había una caseta de policía pequeña.'], // 10
+      ['そこ の おまわりさん が アナ の 赤い 財布 を 出しました=出す 。', 'El policía de ahí sacó la billetera roja de Ana.'],     // 11
+      ['中 の お金 も 写真 も 大丈夫 でした=です:pasado 。', 'El dinero y la foto de adentro estaban bien.'],                    // 12
+      ['アナ は 「 本当 に ありがとうございました=ありがとうございます:pasado 。 」 と 言いました=言う 。', 'Ana dijo: "Muchísimas gracias".'], // 13
+    ]],
+    questions: [
+      { t: 'mc', q: '¿Dónde perdió Ana la billetera?', qjp: 'アナ さん は どこ で 財布 を なくしました=なくす か 。', opts: ['En el metro', 'En el parque', 'En el bus'], a: 0, why: '「地下鉄の中で財布をなくしました」: なくす = perder (algo).', ev: 0 },
+      { t: 'mc', q: '¿Cómo es la billetera de Ana?', qjp: 'アナ さん の 財布 は どんな 財布 です か 。', opts: ['Roja y pequeña', 'Negra y pequeña', 'Roja y grande'], a: 0, why: '「赤くて小さい財布です」: 赤い → 赤くて (y…).', ev: 5 },
+      { t: 'tf', q: 'La billetera estaba en la caseta frente a la estación.', a: false, why: 'Estaba en la caseta 「公園の前の交番」, frente al parque. Ana fue primero a la de la estación.', ev: [3, 6] },
+      { t: 'mc', q: '¿Cómo se llega a la caseta del parque?', qjp: '公園 の 前 の 交番 へ は どう 行きます=行く か 。', opts: ['Derecho, a la derecha en la segunda esquina y luego cruzar el puente', 'A la izquierda en la primera esquina y luego cruzar el puente', 'Cruzar el puente y luego doblar a la derecha en la segunda esquina'], a: 0, why: '「まっすぐ行って、二つ目の角を右に曲がって」 y 「それから橋を渡ると…」. 角 を 曲がる: を marca el lugar por donde se pasa.', ev: [7, 8] },
+      { t: 'text', q: '¿Qué había en la billetera además de dinero? (escribe en japonés)', qjp: '財布 に は お金 と 何|なに が 入って=入る いました=いる か 。', accept: ['しゃしん', '写真', 'たいせつなしゃしん', '大切な写真'], why: '「お金と大切な写真が入っていました」.', ev: 2 },
+    ],
+  },
+  {
+    id: 'r27', level: 6, title: '誕生日 の プレゼント', es: 'Los regalos de cumpleaños', after: 'u15l2', topic: 'regalos',
+    paras: [[
+      ['先週 の 金曜日 は わたし の 二十歳 の 誕生日 でした=です:pasado 。', 'El viernes pasado fue mi cumpleaños número veinte.'], // 0
+      ['朝 、 両親 は わたし に 新しい とけい を くれました=くれる 。', 'En la mañana, mis papás me regalaron un reloj nuevo.'],  // 1
+      ['白くて=白い 、 とても きれい な とけい です 。', 'Es un reloj blanco y muy bonito.'],                                   // 2
+      ['兄 から は 本 を 二冊|にさつ=冊 もらいました=もらう 。', 'De mi hermano mayor recibí dos libros.'],                    // 3
+      ['おばあさん から も きれい な はがき を もらいました=もらう 。', 'De mi abuela también recibí una postal bonita.'],         // 4
+    ], [
+      ['夜 、 友だち の アナ と ケン が うち に 来ました=来る 。', 'En la noche, mis amigos Ana y Ken vinieron a mi casa.'],    // 5
+      ['アナ は 自分 で 作った=作る ケーキ を 持って=持つ 来ました=来る 。', 'Ana trajo una torta que hizo ella misma.'],       // 6
+      ['ケン は 「 ゆい 、 おめでとう 」 と 言って=言う 、 わたし に 花 を くれました=くれる 。', 'Ken me dijo "Yui, felicidades" y me dio flores.'], // 7
+      ['黄色い 花 が 十本|じゅっぽん=本#ctr ありました=ある 。', 'Eran diez flores amarillas.'],                                // 8
+      ['みんな で ケーキ を 食べたり=食べる:forma-たり 、 歌 を 歌ったり=歌う:forma-たり しました=する 。', 'Todos juntos comimos torta, cantamos canciones y cosas así.'], // 9
+    ], [
+      ['ケン の 誕生日 は 来月 の 三日 です 。', 'El cumpleaños de Ken es el 3 del próximo mes.'],                                // 10
+      ['わたし も ケン に 何か あげたい=あげる です 。', 'Yo también quiero regalarle algo a Ken.'],                            // 11
+      ['ケン は ギター を 弾く の が 好き です から=から#porque 、 ギター の 本 が いい と 思います=思う 。', 'A Ken le gusta tocar guitarra, así que creo que un libro de guitarra estaría bien.'], // 12
+      ['明日 、 アナ と いっしょに デパート へ 買い=買う:raíz-ます に 行きます=行く 。', 'Mañana voy a ir con Ana a la tienda a comprarlo.'], // 13
+    ]],
+    questions: [
+      { t: 'mc', q: '¿Qué le regalaron sus papás a Yui?', qjp: '両親 は ゆい さん に 何|なに を くれました=くれる か 。', opts: ['Un reloj blanco', 'Dos libros', 'Diez flores'], a: 0, why: '「両親はわたしに新しいとけいをくれました」 y 「白くて、とてもきれいなとけいです」. くれる = alguien me da a mí.', ev: [1, 2] },
+      { t: 'tf', q: 'Yui recibió dos libros de su hermano mayor.', qjp: 'ゆい さん は お兄さん から 本 を 二冊|にさつ=冊 もらいました=もらう か 。', a: true, why: '「兄から本を二冊もらいました」: Persona から もらう = recibir de…. Ella dice 兄 porque es su propio hermano.', ev: 3 },
+      { t: 'mc', q: '¿Qué trajo Ana?', qjp: 'アナ さん は 何|なに を 持って=持つ 来ました=来る か 。', opts: ['Una torta que hizo ella misma', 'Diez flores amarillas', 'Un libro de guitarra'], a: 0, why: '「自分で作ったケーキを持って来ました」: 自分で作った modifica a ケーキ. Las flores fueron de Ken.', ev: [6, 7] },
+      { t: 'tf', q: 'El cumpleaños de Ken ya pasó.', a: false, why: '「ケンの誕生日は来月の三日です」: es el día 3 del próximo mes.', ev: 10 },
+      { t: 'text', q: '¿Qué le quiere regalar Yui a Ken? (escribe en japonés)', qjp: 'ゆい さん は ケン さん に 何|なに を あげたい=あげる です か 。', accept: ['ギターのほん', 'ギターの本', 'ギター の 本', 'ほん', '本'], why: '「ギターの本がいいと思います」: a Ken le gusta tocar guitarra. あげる = dar a otro.', ev: [11, 12] },
     ],
   },
 ];

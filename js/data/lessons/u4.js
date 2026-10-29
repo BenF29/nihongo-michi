@@ -87,7 +87,7 @@ export default {
     { t: 'auto', n: 5 },
     { t: 'build', es: 'La universidad es de 9 a 5.', jp: 'だいがく は 九|く=九 時 から 五 時 まで です 。', extra: ['か', 'の'],
       why: 'から y まで van después de cada hora.' },
-    { t: 'mc', q: '¿Cómo se dice «3 p.m.»?', opts: ['午後 三 時', '午前 三 時', '三 時 午後', '三 分'], a: 0,
+    { t: 'mc', q: '¿Cómo se dice «3 p.m.»?', opts: ['午後 三 時', '午前 三 時', '三 時 午後', '三 分|ぷん=分'], a: 0,
       why: '午後 (p.m.) va ANTES de la hora.' },
     { t: 'fill', jp: 'レストラン は 午前 十 一 時 ＿ 午後 十 時 まで です 。', es: 'El restaurante atiende de 11 a.m. a 10 p.m.', opts: ['から', 'まで', 'の'], a: 0,
       why: 'から = desde. まで ya está después de 十時.' },

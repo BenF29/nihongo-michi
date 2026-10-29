@@ -122,6 +122,54 @@ const K = [
   ['言', 'decir', 'ゲン', 'い(う)', 'Palabras saliendo de una boca (口).', '言う 言葉'],
   ['意', 'idea', 'イ', '—', 'Un sonido (音) sobre el corazón (心).', '意味'],
   ['味', 'sabor', 'ミ', 'あじ', 'Una boca (口) + todavía no (未): probando el sabor.', '意味'],
+  // u10l1
+  ['万', 'diez mil', 'マン・バン', '—', 'Un "uno" (一) con un gancho que se dobla de tanto peso: diez mil.', '万 一万 万年筆'],
+  // u10l2
+  ['年', 'año', 'ネン', 'とし', 'Una persona cargando la cosecha de todo el año sobre los hombros.', '年 今年 去年 来年 毎年'],
+  ['生', 'vida; nacer', 'セイ・ショウ', 'う(まれる)・い(きる)', 'Un brote que sale de la tierra (土) y crece: la vida.', '先生 学生 生まれる 誕生日'],
+  // u10l3
+  ['名', 'nombre', 'メイ', 'な', 'De noche (夕) no te ven, así que dices tu nombre con la boca (口).', '名前 有名'],
+  // u11l1
+  ['白', 'blanco', 'ハク', 'しろ(い)', 'El sol (日) con un rayo de luz encima: blanco brillante.', '白い'],
+  ['長', 'largo; jefe', 'チョウ', 'なが(い)', 'Un anciano de pelo muy largo que flota al viento.', '長い'],
+  // u11l2
+  ['多', 'mucho', 'タ', 'おお(い)', 'Dos noches (夕) una encima de otra: muchas noches.', '多い'],
+  ['国', 'país', 'コク', 'くに', 'Un rey con su joya (玉) dentro de las fronteras (囗): un país.', '国 外国 外国人'],
+  // u11l3
+  ['空', 'cielo; vacío', 'クウ', 'そら・あ(く)', 'Un agujero (穴) en el techo por donde se ve el trabajo (工) de las nubes: el cielo.', '空'],
+  // u12l1
+  ['友', 'amigo', 'ユウ', 'とも', 'Dos manos que se cruzan para saludarse: amigos.', '友だち'],
+  // u12l2
+  ['間', 'espacio, intervalo', 'カン', 'あいだ・ま', 'El sol (日) que se asoma entre las dos hojas de una puerta (門).', '時間 週間'],
+  ['川', 'río', 'セン', 'かわ', 'Tres líneas de agua que corren: un río.', '川'],
+  // u12l3
+  ['何', 'qué', 'カ', 'なに・なん', 'Una persona (亻) que pregunta: ¿se puede (可)? ¿Qué?', '何 何か 何も'],
+  ['外', 'afuera', 'ガイ', 'そと', 'De noche (夕) el adivino (卜) lee las estrellas afuera.', '外 外国'],
+  // u13l1
+  ['口', 'boca; abertura', 'コウ', 'くち', 'Una boca abierta, cuadrada.', '口 入口 出口'],
+  ['立', 'pararse', 'リツ', 'た(つ)', 'Una persona de pie, bien parada sobre el suelo.', '立つ'],
+  // u13l2
+  ['足', 'pie, pierna', 'ソク', 'あし', 'Una rodilla (口) sobre una pierna que da un paso.', '足'],
+  ['手', 'mano', 'シュ', 'て', 'Una mano con sus dedos extendidos.', '手 上手 下手 手紙 切手'],
+  ['目', 'ojo', 'モク', 'め', 'Un ojo puesto de pie, con la pupila en medio.', '目'],
+  ['耳', 'oreja', 'ジ', 'みみ', 'Una oreja con sus pliegues.', '耳'],
+  // u13l3
+  ['語', 'idioma, palabra', 'ゴ', 'かた(る)', 'Palabras (言) de mi (吾) gente: un idioma.', '日本語 英語 言語'],
+  // u14l1
+  ['花', 'flor', 'カ', 'はな', 'Una planta (艹) que cambia (化): la flor.', '花 花瓶'],
+  ['魚', 'pez', 'ギョ', 'さかな', 'Cabeza arriba, escamas en medio (田) y la cola abajo: un pez.', '魚'],
+  // u14l2
+  ['駅', 'estación', 'エキ', '—', 'Antes las estaciones eran postas con caballos (馬).', '駅'],
+  ['車', 'auto, carro', 'シャ', 'くるま', 'Un carro visto desde arriba: el eje y dos ruedas.', '車 電車 自転車 自動車'],
+  ['電', 'electricidad', 'デン', '—', 'Lluvia (雨) y un rayo que cae: electricidad.', '電車 電話 電気'],
+  // u14l3
+  ['社', 'empresa; santuario', 'シャ', 'やしろ', 'Un altar (礻) sobre la tierra (土): un santuario, y luego la empresa.', '会社'],
+  // u15l1
+  ['東', 'este', 'トウ', 'ひがし', 'El sol (日) que sale detrás de un árbol (木): el este.', '東 東京'],
+  ['西', 'oeste', 'セイ・サイ', 'にし', 'Un pájaro que vuelve a su nido al atardecer, cuando el sol se va al oeste.', '西'],
+  ['南', 'sur', 'ナン', 'みなみ', 'Una carpa con techo (十) para el calor del sur.', '南'],
+  ['北', 'norte', 'ホク', 'きた', 'Dos personas sentadas espalda con espalda, dándole la espalda al frío del norte.', '北'],
+  ['道', 'camino', 'ドウ', 'みち', 'Una cabeza (首) que avanza (辶) por el camino.', '道'],
 ];
 
 export const KANJI = Object.fromEntries(K.map(([k, es, on, kun, mn, ex]) => [k, { k, es, on, kun, mn, ex: ex.split(' ') }]));

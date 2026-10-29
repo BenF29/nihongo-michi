@@ -146,7 +146,5 @@ export default {
       opts: ['Prefiere Kioto, que es tranquila, y cree que es bonita.', 'Prefiere Tokio porque es animada.', 'Cree que Kioto es ruidosa.'], a: 0,
       why: '〜が、 = pero. 静かな京都が好きです = le gusta la tranquila Kioto; きれいだと思います = cree que es bonita.' },
     { t: 'auto', n: 5 },
-    { t: 'teach', title: '¡Completaste el camino!',
-      body: 'Ya sabes hiragana, katakana, unos 100 kanji, más de 300 palabras y la gramática base del japonés: oraciones con です, verbos en ます y en forma casual, adjetivos, la forma て, deseos, opiniones y razones.\n\nAhora lo más importante es **leer mucho** texto que entiendas casi completo (input comprensible). Ve a la sección **Lecturas**: los textos de nivel 4 y 5 están hechos para ti.\n\n{本当 に すごい です ね ！}' },
   ],
 };

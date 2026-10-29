@@ -6,14 +6,15 @@ Aplicación web interactiva para aprender japonés desde cero, en español.
 
 ## Qué incluye
 
-- **Camino de aprendizaje**: 9 unidades y 34 lecciones en orden. Empieza con hiragana y katakana, sigue con saludos y gramática básica (は・です, か, の, これ/それ/あれ), números, la hora, verbos en ます, partículas, el pasado, adjetivos い/な, あります/います, familia, forma て, 〜たい, habla casual y opiniones (〜と思います, 〜から). Hay unos 100 kanji repartidos a lo largo del camino.
+- **Camino de aprendizaje**: 15 unidades y 52 lecciones en orden, que cubren todo el **JLPT N5** (los 104 kanji del N5 y otros 28, unas 820 palabras y toda su gramática). Empieza con hiragana y katakana, sigue con saludos y gramática básica (は・です, か, の, これ/それ/あれ), números, la hora, verbos en ます, partículas, el pasado, adjetivos い/な, あります/います, familia, forma て, 〜たい, habla casual y opiniones, y luego contadores y fechas, compras, comparaciones (より, いちばん), 〜くなる, la forma た (〜たことがある, 〜たり), もう/まだ, 前に/てから/後で, 〜ないでください, 〜なければなりません, できる/わかる, oraciones de relativo, 〜とき, 〜ながら, 何か/何も, しか, でしょう, direcciones, あげる/もらう/くれる y las expresiones de la vida diaria.
   - Ejercicios variados: opción múltiple, completar partículas, armar oraciones con fichas, escuchar (voz sintetizada), unir pares, escribir en romaji y diálogos que se revelan línea a línea.
   - Feedback inmediato que explica *por qué* una respuesta es correcta o no. Las preguntas falladas vuelven al final de la lección.
   - Cada lección usa solo palabras ya enseñadas más las nuevas (i+1), y recicla vocabulario anterior.
   - **Producción**: desde la unidad 4 las fichas se van retirando y hay que escribir las oraciones en japonés (kana, kanji o romaji, que se convierte solo). Las fichas quedan como ayuda a cambio de menos XP. El corrector acepta kanji o kana y avisa si solo fallaste en una vocal larga.
   - **Dictados**: escuchar una oración y escribirla.
   - **⏩ Ya lo sé**: una prueba corta por unidad para saltar lo que ya sabes.
-- **Lecturas graduadas**: 19 textos originales en 5 niveles, que se pueden leer o hacer en modo **🎧 Escuchar primero** (texto oculto, reproductor por oraciones), con preguntas de comprensión (opción múltiple, verdadero/falso y respuesta escrita en japonés o romaji). El feedback resalta la oración del texto donde está la respuesta. Cada lectura muestra qué porcentaje de sus palabras ya conoces.
+- **Simulacro JLPT N5**: examen completo con las tres secciones reales (文字・語彙 20 min, 文法・読解 40 min, 聴解), los mismos tipos de problema (もんだい 1–6 y los cuatro del 聴解), sin furigana en los kanji del N5 y con el audio sonando una sola vez. Al final da un puntaje estimado en la escala del JLPT (aprobado: 80/180), el detalle por tipo de problema y qué lecciones repasar. También se puede hacer una sola sección o practicar cada tipo de problema con corrección inmediata.
+- **Lecturas graduadas**: 27 textos originales en 6 niveles, que se pueden leer o hacer en modo **🎧 Escuchar primero** (texto oculto, reproductor por oraciones), con preguntas de comprensión (opción múltiple, verdadero/falso y respuesta escrita en japonés o romaji). El feedback resalta la oración del texto donde está la respuesta. Cada lectura muestra qué porcentaje de sus palabras ya conoces.
 - **Diccionario clicable**: toca cualquier palabra japonesa para ver su significado, lectura, romaji, forma gramatical (p. ej. 食べました ← 食べる, pasado cortés) y los kanji que la componen. La furigana aparece solo sobre los kanji que todavía no aprendes.
 - **Repaso espaciado** (sistema Leitner: 1, 3, 7, 16, 35… días), tabla de kana, lista de kanji y vocabulario aprendido.
 - **Perfiles**: varios usuarios por navegador, cada uno con su progreso, XP, racha diaria y meta. El progreso se guarda en `localStorage` y se puede exportar e importar con un código para cambiar de dispositivo.
@@ -36,6 +37,7 @@ Es un sitio estático, sin dependencias ni paso de compilación (HTML, CSS y mó
 ```sh
 python3 -m http.server 8000   # luego abre http://localhost:8000
 node tools/validate.mjs       # valida el contenido (añade -w para ver advertencias)
+node tools/n5-coverage.mjs    # qué kanji y palabras del N5 enseña el camino
 ```
 
 El contenido vive en `js/data/`:
@@ -47,5 +49,6 @@ El contenido vive en `js/data/`:
 | `kana.js`, `kanji.js` | caracteres con mnemotecnias |
 | `lessons/uN.js` | los pasos de cada lección |
 | `readings.js` | lecturas y preguntas |
+| `exam/` | banco de preguntas del simulacro N5 |
 
 El formato está documentado en [`docs/FORMATO.md`](docs/FORMATO.md). El validador comprueba que cada palabra exista en el diccionario, que cada lección use solo vocabulario y kana ya enseñados, y calcula la cobertura de vocabulario de cada lectura.

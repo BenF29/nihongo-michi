@@ -10,6 +10,7 @@ import { KANJI } from '../js/data/kanji.js';
 import { KANA } from '../js/data/kana.js';
 import { STEPS } from '../js/data/lessons/index.js';
 import READINGS from '../js/data/readings.js';
+import { BANK } from '../js/data/exam/index.js';
 
 const errors = [], warns = [];
 const err = (where, msg) => errors.push(`✗ ${where}: ${msg}`);
@@ -139,6 +140,91 @@ for (const r of READINGS.length ? READINGS : []) {
   cov.push([r.id, r.level, r.after, total ? Math.round(100 * ok / total) : 0, total, [...unknown].slice(0, 12).join(' ')]);
 }
 
+// ── Simulacro ──
+const EXAM_TYPES = { moji1: 4, moji2: 4, goi3: 4, goi4: 4, bunpo1: 4, bunpo2: 0, bunpo3: 0, dokkai4: 0, dokkai5: 0, dokkai6: 0, chokai1: 4, chokai2: 4, chokai3: 3, chokai4: 3 };
+const PLAIN_OPTS = new Set(['moji1', 'moji2']);
+const examIds = new Set();
+let examN = 0;
+function examText(where, text) {
+  if (typeof text !== 'string' || !text.trim()) { err(where, 'texto vacío'); return []; }
+  const toks = tokenize(text);
+  for (const tok of toks) {
+    if (tok.punct || tok.blank) continue;
+    if (!tok.entry) { err(where, `palabra desconocida «${tok.raw}» en: ${text}`); continue; }
+    if (tok.entry.pos !== 'name' && !introducedIn[tok.entry.id]) err(where, `«${tok.raw}» no se enseña en el camino`);
+    if (!tok.reading && /[一-龯]/.test(tok.surface)) warn(where, `sin lectura: «${tok.raw}»`);
+  }
+  return toks;
+}
+function examChoice(where, q, n, plain) {
+  if (!Array.isArray(q.opts)) { err(where, 'faltan opts'); return; }
+  if (n && q.opts.length !== n) err(where, `se esperaban ${n} opciones, hay ${q.opts.length}`);
+  if (new Set(q.opts).size !== q.opts.length) err(where, 'opciones repetidas');
+  if (!(q.a >= 0 && q.a < q.opts.length)) err(where, '"a" fuera de rango');
+  if (!plain) q.opts.forEach(o => examText(where, o));
+  if (!q.why) warn(where, 'sin why');
+}
+for (const [type, items] of Object.entries(BANK)) {
+  if (!(type in EXAM_TYPES)) { err('examen', `tipo desconocido ${type}`); continue; }
+  for (const it of items) {
+    examN++;
+    const where = `examen ${it.id || type}`;
+    if (!it.id) err(where, 'falta id');
+    else if (examIds.has(it.id)) err(where, 'id duplicado'); else examIds.add(it.id);
+    if (!it.ref || !(it.ref in LESSON_INDEX)) err(where, `ref inválido: ${it.ref}`);
+    switch (type) {
+      case 'moji1': case 'moji2': case 'goi3': case 'goi4': case 'bunpo1': {
+        const toks = examText(where, it.jp);
+        if (it.u && !toks.some(t => t.raw === it.u)) err(where, `u «${it.u}» no es un token de jp`);
+        if ((type === 'moji1' || type === 'moji2') && !it.u) err(where, 'falta u (palabra subrayada)');
+        if ((type === 'goi3' || type === 'bunpo1') && !toks.some(t => t.blank)) err(where, 'falta ＿');
+        examChoice(where, it, EXAM_TYPES[type], PLAIN_OPTS.has(type));
+        break;
+      }
+      case 'bunpo2': {
+        if (!Array.isArray(it.pieces) || it.pieces.length !== 4) { err(where, 'pieces debe tener 4 elementos'); break; }
+        [it.pre, it.post, ...it.pieces].filter(Boolean).forEach(t => examText(where, t));
+        if (!(it.star >= 0 && it.star < 4)) err(where, 'star fuera de rango');
+        const o = it.order || [];
+        if (o.length !== 4 || [...o].sort().join() !== '0,1,2,3') err(where, 'order debe ser una permutación de 0–3');
+        else if (o.join() === '0,1,2,3') err(where, 'order no puede ser el orden correcto');
+        if (new Set(it.pieces).size !== 4) err(where, 'piezas repetidas');
+        break;
+      }
+      case 'bunpo3': {
+        const blanks = (it.paras || []).reduce((n, p) => n + examText(where, p).filter(t => t.blank).length, 0);
+        if (!it.gaps || blanks !== it.gaps.length) err(where, `${blanks} huecos y ${it.gaps?.length || 0} gaps`);
+        (it.gaps || []).forEach((g, i) => examChoice(`${where} hueco ${i + 1}`, g, 4));
+        if (!it.es) warn(where, 'sin traducción');
+        break;
+      }
+      case 'dokkai4': case 'dokkai5': case 'dokkai6': {
+        const sents = (it.paras || []).map(([j, es]) => { examText(where, j); if (!es) warn(where, `oración sin traducción: ${j}`); return j; });
+        if (it.title) examText(where, it.title);
+        if (it.table) { (it.table.cols || []).forEach(c => examText(where, c)); (it.table.rows || []).forEach(r => r.forEach(c => examText(where, c))); }
+        if (!it.questions?.length) err(where, 'sin preguntas');
+        (it.questions || []).forEach((q, i) => {
+          const w = `${where} P${i + 1}`;
+          examText(w, q.qjp);
+          examChoice(w, q, 4);
+          for (const e of [].concat(q.ev ?? [])) if (e < 0 || e >= sents.length) err(w, `ev ${e} fuera de rango`);
+        });
+        break;
+      }
+      case 'chokai1': case 'chokai2': case 'chokai3': case 'chokai4': {
+        if (it.intro) examText(where, it.intro);
+        if (it.qjp) examText(where, it.qjp); else if (type !== 'chokai4') err(where, 'falta qjp');
+        if (type !== 'chokai3' && !it.lines?.length) err(where, 'falta lines');
+        (it.lines || []).forEach(([who, j]) => { if (!who) err(where, 'línea sin hablante'); examText(where, j); });
+        if (type === 'chokai3' && !it.scene) err(where, 'falta scene');
+        if ((type === 'chokai1' || type === 'chokai2') && !it.es) warn(where, 'sin traducción del diálogo');
+        examChoice(where, it, EXAM_TYPES[type]);
+        break;
+      }
+    }
+  }
+}
+
 if (process.argv.includes('--coverage') || cov.length) {
   console.log('\nCobertura de lecturas (palabras conocidas al terminar `after`):');
   for (const [id, lv, after, pct, n, unk] of cov) console.log(`  ${id} N${lv} tras ${after}: ${pct}% de ${n} palabras${unk ? `  · nuevas: ${unk}` : ''}`);
@@ -146,7 +232,7 @@ if (process.argv.includes('--coverage') || cov.length) {
 const unused = Object.keys(introducedIn).filter(id => !wordUses[id] && ENTRIES[id].pos !== 'name');
 if (unused.length) warn('vocab', `palabras introducidas que no aparecen en ningún texto de lección: ${unused.join(' ')}`);
 
-console.log(`\nLecciones con pasos: ${LESSONS.filter(l => STEPS[l.id]).length}/${LESSONS.length} · Lecturas: ${cov.length} · Palabras: ${Object.keys(ENTRIES).length}`);
+console.log(`\nLecciones con pasos: ${LESSONS.filter(l => STEPS[l.id]).length}/${LESSONS.length} · Lecturas: ${cov.length} · Palabras: ${Object.keys(ENTRIES).length} · Preguntas de examen: ${examN}`);
 if (process.argv.includes('-w') || process.argv.includes('--warn')) warns.forEach(w => console.log(w));
 else if (warns.length) console.log(`${warns.length} advertencias (usa -w para verlas)`);
 errors.forEach(e => console.log(e));

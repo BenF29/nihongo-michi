@@ -16,6 +16,7 @@ import { ENTRIES, tokenize, spoken, tokSay, sayWord, audioKey, voiceOf, autoVoic
 import { KANA } from '../js/data/kana.js';
 import { STEPS } from '../js/data/lessons/index.js';
 import READINGS from '../js/data/readings.js';
+import { BANK, examScript } from '../js/data/exam/index.js';
 
 const ENGINE = process.env.VOICEVOX || 'http://127.0.0.1:50021';
 const SPEAKER = { f: 8, m: 11 };   // 春日部つむぎ, 玄野武宏
@@ -57,6 +58,16 @@ for (const r of READINGS) {
     if (q.qjp) addJp(q.qjp);
     if (q.opts?.every(hasJp)) q.opts.forEach(o => addJp(o));
   }
+}
+
+// Simulacro: los guiones de 聴解 con la voz de cada parte; del resto, solo las palabras (para el diccionario al revisar)
+const addToks = text => { for (const t of tokenize(text)) if (!t.punct && !t.blank && t.entry) add(tokSay(t, true), 'f', t.entry.pos === 'prt' && PRT[t.surface] ? PRT[t.surface] : (t.reading || t.surface)); };
+for (const [type, list] of Object.entries(BANK)) for (const it of list) {
+  if (type.startsWith('chokai')) { for (const [j, v] of examScript(type, it)) addJp(j, v); continue; }
+  const texts = [it.jp, it.pre, it.post, it.title, ...(it.pieces || []), ...(it.paras || []).map(p => Array.isArray(p) ? p[0] : p),
+    ...(it.table ? [...it.table.cols, ...it.table.rows.flat()] : []), ...(it.questions || []).flatMap(q => [q.qjp, ...q.opts]),
+    ...(it.gaps || []).flatMap(g => g.opts), ...(type === 'moji1' || type === 'moji2' ? [] : it.opts || [])];
+  texts.filter(Boolean).forEach(t => addToks(t.replace(/＿/g, ' ')));
 }
 
 const all = [...items.values()];

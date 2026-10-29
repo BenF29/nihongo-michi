@@ -118,8 +118,53 @@ export default [
 ];
 ```
 
-- `level`: 1 (tras unidad 3) · 2 (tras unidad 5) · 3 (tras unidad 7) · 4 (tras unidad 9) · 5 (intermedio, con vocabulario extra).
+- `level`: 1 (tras unidad 3) · 2 (tras unidad 5) · 3 (tras unidad 7) · 4 (tras unidad 9) · 5 (intermedio, con vocabulario extra) · 6 (N5: tras las unidades 10–15, como el 読解 del examen).
 - `after`: id de la lección tras la cual la lectura debería ser comprensible (≥ 90 % de palabras conocidas).
 - `ev`: índice global (desde 0, contando todas las oraciones de todos los párrafos) de la oración que contiene la respuesta; se resalta en el feedback. Puede ser un número o una lista.
 - `qjp` (opcional): la pregunta en japonés tokenizado (para niveles 3–5), además de `q` en español.
 - Palabras que no están en `vocab.js` van a `vocab_extra.js`.
+
+## Simulacro JLPT N5 (`js/data/exam/`)
+
+El banco está repartido en `gengo.js` (文字・語彙 y 文法), `dokkai.js` (読解) y `chokai.js` (聴解). Cada archivo exporta un objeto `{ tipo: [ítems] }`. Los textos se escriben tokenizados, igual que en las lecciones, y **solo pueden usar palabras que el camino enseña** (el validador lo comprueba). Las instrucciones y preguntas van en japonés, como en el examen real. `why` (en español) se muestra al revisar el resultado. `ref` es la lección que conviene repasar si fallas.
+
+Todos los ítems llevan `id` único (p. ej. `'m1-07'`), `a` (índice de la respuesta correcta; la app **no** baraja las opciones, para que «1 2 3 4» funcione como en el examen), `why` y `ref`.
+
+```js
+// 問題1 (moji1): lectura del kanji subrayado. u = token de jp que se subraya (tal cual).
+// Las opciones son kana sueltas (no se tokenizan).
+{ id: 'm1-01', jp: '毎朝 七時 に 起きます=起きる 。', u: '起きます=起きる', opts: ['おきます', 'あきます', 'いきます', 'おぎます'], a: 0, why: '…', ref: 'u8l2' }
+
+// 問題2 (moji2): cómo se escribe la palabra subrayada (que va en kana). Opciones: escrituras sueltas.
+{ id: 'm2-01', jp: 'あした は やすみ です 。', u: 'やすみ=休み', opts: ['休み', '体み', '木み', '本み'], a: 0, why: '…', ref: 'u9l1' }
+
+// 問題3 (goi3): palabra que va en （　）. 問題1 de 文法 (bunpo1) usa el mismo formato.
+{ id: 'g3-01', jp: 'のど が かわいた から 、 ＿ を 飲みます=飲む 。', opts: ['水', 'パン', '本', 'くつ'], a: 0, why: '…', ref: 'u5l1' }
+
+// 問題4 (goi4): oración de significado más parecido. u (opcional) subraya la parte clave.
+{ id: 'g4-01', jp: 'この 部屋 は 暗い です 。', u: '暗い', opts: ['この 部屋 は 明るくない=明るい です 。', '…', '…', '…'], a: 0, why: '…', ref: 'u11l3' }
+
+// 文法 問題2 (bunpo2): ★ — pieces en el orden correcto; star = posición (0–3) del ★ (en el examen real suele ser 2).
+// order (obligatorio) = orden en que se muestran las piezas como opciones 1–4 (índices de pieces); no puede ser el orden correcto.
+// La respuesta es la opción que muestra pieces[star] (no lleva `a`).
+{ id: 'b2-01', pre: 'わたし は', pieces: ['ケーキ', 'を', '食べた=食べる', 'こと'], post: 'が あります=ある 。', star: 2, order: [2, 0, 3, 1], why: '…', ref: 'u12l2' }
+
+// 文法 問題3 (bunpo3): texto con huecos ＿ (en orden); gaps[i] es el hueco i.
+{ id: 'b3-01', title: 'わたし の 町', paras: ['わたし は タルカ に 住んで=住む います=いる 。 ＿ 町 は …', '…'], es: 'Traducción…',
+  gaps: [{ opts: ['この', 'その', 'あの', 'どの'], a: 1, why: '…' }], ref: 'u14l1' }
+
+// 読解 (dokkai4 corto · dokkai5 mediano · dokkai6 búsqueda de información)
+{ id: 'd4-01', paras: [['jp', 'es'], ['jp', 'es']], questions: [{ qjp: 'jp', opts: ['jp', '…'], a: 0, why: '…', ev: 1 }], ref: 'u12l1' }
+// dokkai6 además puede llevar una tabla (celdas en japonés tokenizado):
+{ id: 'd6-01', paras: [['…', '…']], table: { cols: ['じかん', 'クラス'], rows: [['九時|くじ=九 〜', 'えいご']] }, questions: [ … ], ref: 'u10l2' }
+
+// 聴解: el audio se genera desde estos textos. Los hablantes son '男の人' / '女の人' (o nombres de MALE en dict.js).
+// chokai1 (tareas) y chokai2 (puntos clave): intro y qjp los dice la narradora antes y después del diálogo; 4 opciones escritas.
+{ id: 'c1-01', intro: '女 の 人 と 男 の 人 が 話して=話す います=いる 。 男 の 人 は 何 を 買います=買う か 。',
+  lines: [['女の人', '…'], ['男の人', '…']], qjp: '男 の 人 は 何 を 買います=買う か 。', opts: ['jp', '…'], a: 0, es: 'traducción del diálogo', why: '…', ref: 'u10l3' }
+// chokai3 (qué decir): scene = descripción breve de la ilustración (en español, con emoji); 3 opciones que solo se escuchan.
+{ id: 'c3-01', scene: '🍽️ Terminas de comer en casa de una amiga.', qjp: 'ごはん を 食べました=食べる 。 何 と 言います=言う か 。',
+  opts: ['ごちそうさまでした 。', 'いただきます 。', 'いってきます 。'], a: 0, why: '…', ref: 'u15l3' }
+// chokai4 (respuesta rápida): una frase y 3 respuestas que solo se escuchan.
+{ id: 'c4-01', lines: [['男の人', 'こんにちは 。 元気 です か 。']], opts: ['はい 、 元気 です 。', '…', '…'], a: 0, why: '…', ref: 'u6l2' }
+```
