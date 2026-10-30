@@ -12,6 +12,7 @@ import { mkdirSync, existsSync, writeFileSync, readdirSync, unlinkSync } from 'n
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ENTRIES, tokenize, spoken, tokSay, sayWord, audioKey, voiceOf, autoVoice, readingVoice, toRomaji, toHira, toKata } from '../js/dict.js';
 import { KANA } from '../js/data/kana.js';
 import { STEPS } from '../js/data/lessons/index.js';
@@ -20,7 +21,7 @@ import { BANK, examScript } from '../js/data/exam/index.js';
 
 const ENGINE = process.env.VOICEVOX || 'http://127.0.0.1:50021';
 const SPEAKER = { f: 8, m: 11 };   // 春日部つむぎ, 玄野武宏
-const OUT = new URL('../audio/', import.meta.url).pathname;
+const OUT = fileURLToPath(new URL('../audio/', import.meta.url));
 const PRT = { 'は': 'わ', 'へ': 'え', 'を': 'お' };
 
 // ───── Reunir todos los textos que la app puede pronunciar ─────
@@ -95,13 +96,8 @@ async function synth(item) {
     }
     if (!ok) mismatches.push(`${item.text}  esperado ${item.reading}  motor ${q.kana}`);
   }
+  // sin alargar vocales: いえ y いいえ tienen que sonar distintos
   Object.assign(q, { speedScale: 0.95, prePhonemeLength: 0.08, postPhonemeLength: 0.15 });
-  // un kana aislado sale muy corto y con un salto de tono: alargar la vocal y estabilizar el tono
-  const moras = q.accent_phrases.flatMap(p => p.moras);
-  if (moras.length <= 2) {
-    const pitch = Math.max(...moras.map(m => m.pitch));
-    for (const m of moras) { m.vowel_length = Math.max(m.vowel_length, 0.32); if (m.pitch > 0) m.pitch = pitch; }
-  }
   const r = await fetch(`${ENGINE}/synthesis?speaker=${speaker}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(q) });
   if (!r.ok) throw new Error(`synthesis ${r.status}: ${item.text}`);
   const wav = join(tmpdir(), `michi-${item.key}.wav`);
