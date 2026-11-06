@@ -10,6 +10,7 @@
 
 import { VOCAB } from './data/vocab.js';
 import { VOCAB_EXTRA } from './data/vocab_extra.js';
+import { FORM_TAUGHT } from './data/curriculum.js';
 
 export const ENTRIES = {};          // id -> entrada
 const BY_W = {}, BY_R = {};
@@ -91,12 +92,32 @@ export function rubyParts(surface, reading) {
   return segs.map((s, i) => hasKanji(s) ? [s, m[i + 1]] : [s, null]);
 }
 
+// Forma ます de un verbo: grupo 2 (v1) quita る; grupo 1 (v5) cambia la última sílaba de u a i
+const I_ROW = { う: 'い', く: 'き', ぐ: 'ぎ', す: 'し', つ: 'ち', ぬ: 'に', ぶ: 'び', む: 'み', る: 'り' };
+export function masuForm(e) {
+  if (e.pos === 'v1') return e.w.slice(0, -1) + 'ます';
+  if (e.pos === 'v5' && I_ROW[e.w.at(-1)]) return e.w.slice(0, -1) + I_ROW[e.w.at(-1)] + 'ます';
+  if (e.pos === 'v3') return e.w.endsWith('する') ? e.w.slice(0, -2) + 'します' : e.w.endsWith('来る') ? e.w.slice(0, -1) + 'ます' : e.w.endsWith('くる') ? e.w.slice(0, -2) + 'きます' : '';
+  return '';
+}
+
+// Lección que enseña cómo se forma la conjugación de este token (null si es forma base o no está registrada)
+export function formTaughtIn(tok) {
+  const e = tok.entry;
+  if (!e || tok.surface === e.w || tok.surface === e.r) return null;
+  const group = /^v[135]$/.test(e.pos) ? 'verb' : e.pos;
+  return FORM_TAUGHT[group]?.[inflectionLabel(tok.surface, e)] || null;
+}
+
 // Etiqueta heurística de la forma conjugada
 export function inflectionLabel(surface, e) {
   const s = surface, p = e.pos;
   if (!/^(v1|v5|v3|adj-i|adj-na|cop)$/.test(p)) return '';
   if (p === 'v1' || p === 'v5' || p === 'v3') {
     const rules = [
+      // 〜ています antes que 〜ます: si no, 見ています quedaría como «forma cortés»
+      ['ていました', 'estaba …-ando'], ['でいました', 'estaba …-ando'],
+      ['ています', 'forma て + います (en curso / estado)'], ['でいます', 'forma て + います (en curso / estado)'],
       ['ませんでした', 'pasado negativo cortés'], ['ました', 'pasado cortés'], ['ません', 'negativo cortés'],
       ['ましょうか', '¿…? (ofrecer o proponer: ましょうか)'],
       ['ましょう', '¡hagámoslo! (ましょう)'], ['ませんか', 'invitación (¿por qué no…?)'], ['ます', 'forma cortés (ます)'],
@@ -104,9 +125,7 @@ export function inflectionLabel(surface, e) {
       ['なくても', 'no hace falta… (なくても)'], ['ないで', 'sin… / no… (ないで)'],
       ['ながら', 'mientras… (ながら)'], ['たり', 'cosas como… (たり)'], ['だり', 'cosas como… (たり)'],
       ['たかった', 'quería… (たかった)'], ['たくない', 'no quiero… (たくない)'], ['たい', 'quiero… (たい)'],
-      ['ています', 'forma て + います (en curso / estado)'], ['でいます', 'forma て + います (en curso / estado)'],
       ['ている', 'forma て + いる (en curso / estado)'], ['でいる', 'forma て + いる (en curso / estado)'],
-      ['ていました', 'estaba …-ando'], ['でいました', 'estaba …-ando'],
       ['てください', 'forma て + ください (por favor)'], ['でください', 'forma て + ください (por favor)'],
       ['なかった', 'pasado negativo (informal)'], ['ない', 'negativo (informal)'],
       ['てから', 'forma て + から (después de…)'], ['でから', 'forma て + から (después de…)'],

@@ -8,7 +8,7 @@ import { N5_KANJI, N5_VOCAB } from './data/n5.js';
 const taughtWords = new Set();
 let taughtKanji = '';
 for (const l of LESSONS) {
-  for (const w of l.words || []) { const e = lookup(w); if (e) taughtWords.add(e.id); }
+  for (const w of [...(l.words || []), ...(l.later || [])]) { const e = lookup(w); if (e) taughtWords.add(e.id); }
   taughtKanji += l.kanji || '';
 }
 const missK = [...N5_KANJI].filter(k => !taughtKanji.includes(k));

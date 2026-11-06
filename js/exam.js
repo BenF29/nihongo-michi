@@ -10,6 +10,7 @@ import { kanjiIn, spoken } from './dict.js';
 import * as S from './state.js';
 import { speak, stopSpeaking } from './tts.js';
 import { esc, $, $$, jp, rich, shuffle, sfx, confetti, audioBtn } from './ui.js';
+import { t as ui } from './uitext.js';
 
 const N5 = new Set(N5_KANJI);
 const examRuby = seg => kanjiIn(seg).some(k => !N5.has(k));
@@ -116,7 +117,7 @@ export function playExam(root, { mode, arg, onExit }) {
         <div class="ex-timer" aria-live="off"></div></header>
       <nav class="ex-nav" aria-label="Preguntas"></nav>
       <main class="pbody" aria-live="polite"></main>
-      <footer class="pfoot ex-foot"><button class="btn ghost prev">← Anterior</button><button class="btn ghost flag" title="Marcar para revisar">🚩</button><button class="btn primary next">Siguiente →</button></footer>
+      <footer class="pfoot ex-foot"><button class="btn ghost prev">← ${ui('ex.prev')}</button><button class="btn ghost flag" title="Marcar para revisar">🚩</button><button class="btn primary next">${ui('p.nextLine')} →</button></footer>
     </div>`;
   const body = $('.pbody', root), nav = $('.ex-nav', root), timer = $('.ex-timer', root);
   const alive = () => document.body.contains(root);
@@ -177,7 +178,7 @@ export function playExam(root, { mode, arg, onExit }) {
     $('.flag', root).classList.toggle('on', !!q.flag);
     $('.flag', root).hidden = practice || linear();
     const last = st.qi === sec().qs.length - 1;
-    $('.next', root).textContent = last ? (st.si < secs.length - 1 ? 'Terminar sección' : practice ? 'Ver resultado' : 'Terminar examen') : 'Siguiente →';
+    $('.next', root).innerHTML = last ? esc(st.si < secs.length - 1 ? 'Terminar sección' : practice ? 'Ver resultado' : 'Terminar examen') : `${ui('p.nextLine')} →`;
     renderNav();
   }
 
@@ -307,7 +308,7 @@ function questionHtml(q, { reveal, review }) {
       break;
     }
     default: {   // 聴解
-      const play = review ? '' : `<button class="btn ex-play">▶ Escuchar</button>`;
+      const play = review ? '' : `<button class="btn ex-play">▶ ${ui('r.listen')}</button>`;
       stem = `${q.type === 'chokai3' ? `<div class="ex-scene">${esc(it.scene)}</div>` : ''}<div class="ex-listen">${play}</div>`;
       if (review) {
         const lines = [...(it.intro ? [['🎙️', it.intro]] : []), ...(it.lines || []), ...(it.qjp && q.type !== 'chokai4' ? [['🎙️', it.qjp]] : [])];

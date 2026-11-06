@@ -17,7 +17,7 @@ function defaults(name, avatar) {
     name, avatar: avatar || '🦊', created: Date.now(),
     xp: 0, streak: { n: 0, last: null }, days: {},
     lessons: {}, tests: {}, words: {}, kana: {}, kanji: {}, readings: {}, exams: [], examSeen: {},
-    settings: { furigana: 'auto', spacing: true, romaji: true, rate: 0.85, sound: true, goal: 50, unlockAll: false, readMode: 'read' },
+    settings: { furigana: 'auto', spacing: true, romaji: true, rate: 0.85, sound: true, goal: 50, unlockAll: false, readMode: 'read', uiJp: true },
   };
 }
 
@@ -95,9 +95,10 @@ export function isKnown(id) {
 export const knownKanji = () => new Set(Object.keys(me()?.kanji || {}));
 export const knownKana = () => new Set(Object.keys(me()?.kana || {}));
 
-function learnWord(id, src) {
+// fresh: palabra que no se vio en la lección; el repaso la presenta con su tarjeta antes de preguntarla
+function learnWord(id, src, fresh = false) {
   const p = me(); if (!p || p.words[id]) return false;
-  p.words[id] = { box: 1, due: Date.now() + SRS_DAYS[1] * DAY, at: Date.now(), src };
+  p.words[id] = fresh ? { box: 0, due: Date.now(), at: Date.now(), src, fresh: true } : { box: 1, due: Date.now() + SRS_DAYS[1] * DAY, at: Date.now(), src };
   return true;
 }
 export function addWordToReview(id, src = 'lectura') { if (learnWord(id, src)) emit(); }
@@ -105,6 +106,7 @@ export function removeWord(id) { const p = me(); if (p) { delete p.words[id]; em
 
 function learnLessonContent(l, p) {
   for (const w of l.words || []) { const e = lookup(w); if (e) learnWord(e.id, l.id); }
+  for (const w of l.later || []) { const e = lookup(w); if (e) learnWord(e.id, l.id, true); }
   for (const k of splitKana(l.kana || '')) p.kana[k] = 1;
   for (const k of l.kanji || '') p.kanji[k] = 1;
 }
@@ -141,13 +143,25 @@ export function passUnitTest(unitId, acc) {
   emit();
 }
 
+// ───── Avance a mitad de lección o prueba ─────
+// Va en su propia clave para no inflar el código de exportación del perfil.
+// shortcut: las claves de un perfil borrado quedan huérfanas; limpiar si el almacenamiento se llena.
+const runKey = k => `michi:run:${db.current}:${k}`;
+export function saveRun(k, data) { try { localStorage.setItem(runKey(k), JSON.stringify(data)); } catch { /* sin almacenamiento */ } }
+export function loadRun(k) { try { return JSON.parse(localStorage.getItem(runKey(k))); } catch { return null; } }
+export function clearRun(k) { try { localStorage.removeItem(runKey(k)); } catch { /* sin almacenamiento */ } }
+
 // ───── Repetición espaciada ─────
+export const NEW_PER_SESSION = 10;
 export function dueWords(limit = 999) {
   const p = me(); if (!p) return [];
   const now = Date.now();
+  let nNew = 0;
   return Object.entries(p.words).filter(([id, w]) => ENTRIES[id] && w.due <= now)
-    .sort((a, b) => a[1].due - b[1].due).slice(0, limit).map(([id]) => id);
+    .sort((a, b) => a[1].due - b[1].due).filter(([, w]) => !w.fresh || nNew++ < NEW_PER_SESSION)
+    .slice(0, limit).map(([id]) => id);
 }
+export const freshCount = () => Object.values(me()?.words || {}).filter(w => w.fresh).length;
 export function gradeWord(id, ok) {
   const p = me(); const w = p?.words[id]; if (!w) return;
   w.box = ok ? Math.min(w.box + 1, SRS_DAYS.length - 1) : 1;
@@ -155,6 +169,7 @@ export function gradeWord(id, ok) {
   const jitter = 1 + (Math.random() * 0.2 - 0.1);
   w.due = Date.now() + (ok ? SRS_DAYS[w.box] * DAY * jitter : 10 * 60000);
   w.seen = (w.seen || 0) + 1; if (!ok) w.lapses = (w.lapses || 0) + 1;
+  delete w.fresh;
   emit();
 }
 

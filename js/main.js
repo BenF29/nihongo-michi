@@ -5,11 +5,13 @@ import { KANA, HIRAGANA_BASIC, KATAKANA_BASIC, splitKana } from './data/kana.js'
 import { KANJI } from './data/kanji.js';
 import { ENTRIES, lookup } from './dict.js';
 import * as S from './state.js';
-import { play } from './lesson.js';
+import { play, savedRun } from './lesson.js';
+import READINGS from './data/readings.js';
 import { renderList, renderReading } from './reader.js';
 import { renderExamHome, playExam } from './exam.js';
 import { ttsAvailable, hasJapaneseVoice } from './tts.js';
 import { esc, $, $$, jp, rich, toast, POS, closePop, WORD_LESSON } from './ui.js';
+import { t } from './uitext.js';
 
 const app = $('#app');
 const AVATARS = ['🦊', '🐱', '🐼', '🐸', '🐧', '🦉', '🐙', '🌸', '🍙', '🗻', '🎏', '🐉'];
@@ -19,10 +21,10 @@ function shell(active, inner) {
   const due = S.dueWords().length;
   const goal = S.settings().goal, today = S.xpToday();
   const pct = Math.min(100, Math.round(100 * today / goal));
-  const nav = [['camino', '道', 'Camino'], ['lecturas', '読', 'Lecturas'], ['repaso', '復', 'Repaso'], ['palabras', '辞', 'Palabras'], ['examen', '試', 'Examen']];
+  const nav = [['camino', '道'], ['lecturas', '読'], ['repaso', '復'], ['palabras', '辞'], ['examen', '試']];
   return `<header class="top">
       <a class="logo" href="#/camino"><span lang="ja">道</span> Michi</a>
-      <nav class="nav">${nav.map(([k, ic, t]) => `<a href="#/${k}" class="${active === k ? 'on' : ''}"><span class="nic" lang="ja">${ic}</span><span class="nt">${t}</span>${k === 'repaso' && due ? `<span class="badge">${due}</span>` : ''}</a>`).join('')}</nav>
+      <nav class="nav">${nav.map(([k, ic]) => `<a href="#/${k}" class="${active === k ? 'on' : ''}"><span class="nic" lang="ja">${ic}</span><span class="nt">${t('nav.' + k)}</span>${k === 'repaso' && due ? `<span class="badge">${due}</span>` : ''}</a>`).join('')}</nav>
       <div class="stats-top">
         <span class="st-streak" title="Racha de días">🔥 ${S.streak()}</span>
         <span class="ring" style="--p:${pct}" title="Meta diaria: ${today}/${goal} XP"><span>${pct >= 100 ? '✓' : today}</span></span>
@@ -63,27 +65,32 @@ function viewProfiles() {
 // ───── Camino ─────
 function viewPath() {
   const nx = S.nextLesson();
-  const due = S.dueWords().length;
+  const dueIds = S.dueWords(), due = dueIds.length, nNew = dueIds.filter(id => S.me().words[id]?.fresh).length;
   const doneN = LESSONS.filter(l => S.lessonDone(l.id)).length;
   let html = `<section class="page path">
     <div class="hero card">
-      ${nx ? `<div><div class="kicker">Siguiente lección · ${esc(UNITS.find(u => u.id === nx.unit).title)}</div><h2>${esc(nx.icon)} ${esc(nx.title)}</h2><p class="muted">${esc(nx.goal || '')}</p></div>
-        <a class="btn primary big" href="#/leccion/${nx.id}">${doneN ? 'Continuar' : 'Empezar'} ▸</a>`
+      ${nx ? `<div><div class="kicker">${t('path.next')} · ${esc(UNITS.find(u => u.id === nx.unit).title)}</div><h2>${esc(nx.icon)} ${esc(nx.title)}</h2><p class="muted">${esc(nx.goal || '')}</p></div>
+        <a class="btn primary big" href="#/leccion/${nx.id}">${t(doneN ? 'path.go' : 'path.start')} ▸</a>`
       : `<div><h2>🎉 ¡Completaste el camino!</h2><p class="muted">Sigue con las lecturas y el repaso diario.</p></div><a class="btn primary big" href="#/lecturas">Ir a lecturas</a>`}
     </div>
-    ${due ? `<a class="callout link" href="#/repaso">🧠 Tienes <b>${due}</b> palabra${due > 1 ? 's' : ''} para repasar hoy — ¡el repaso a tiempo es lo que fija la memoria!</a>` : ''}
+    ${due ? `<a class="callout link" href="#/repaso">🧠 Tienes <b>${due}</b> palabra${due > 1 ? 's' : ''} para repasar hoy${nNew ? `, ${nNew} de ellas nuevas` : ''}.</a>` : ''}
     <div class="progress-line"><span>${doneN}/${LESSONS.length} lecciones</span><div class="meter"><i style="width:${Math.round(100 * doneN / LESSONS.length)}%"></i></div></div>`;
   for (const u of UNITS) {
     const done = u.lessons.filter(l => S.lessonDone(l.id)).length;
     const complete = done === u.lessons.length;
     html += `<div class="unit" style="--c:${u.color}">
       <div class="uhead"><div class="uic" lang="ja">${esc(u.icon)}</div><div class="ut"><h2>${esc(u.title)}</h2><p>${esc(u.sub)}</p></div>
-        <div class="uside"><span class="uprog">${done}/${u.lessons.length}</span>${complete ? '<span class="tag ok">✓</span>' : `<button class="btn sm ghost skip" data-unit="${u.id}" title="Si ya sabes esto, demuéstralo y salta">⏩ Ya lo sé</button>`}</div></div>
+        <div class="uside"><span class="uprog">${done}/${u.lessons.length}</span>${complete ? '<span class="tag ok">✓</span>' : `<button class="btn sm ghost skip" data-unit="${u.id}" title="Si ya sabes esto, demuéstralo y salta">⏩ ${t('path.skip')}</button>`}</div></div>
       <div class="nodes">${u.lessons.map((l, i) => {
         const d = S.lessonDone(l.id), un = S.isUnlocked(l.id), cur = nx && nx.id === l.id;
         const off = [0, 1, 2, 1, 0, -1, -2, -1][i % 8];
         return `<button class="node ${d ? 'done' : ''} ${un ? '' : 'locked'} ${cur ? 'cur' : ''}" style="--o:${off}" data-l="${l.id}" aria-label="${esc(l.title)}">
-          <span class="nb" lang="ja">${d ? '✓' : un ? esc(l.icon) : '🔒'}</span><span class="nl">${esc(l.title)}</span>${cur ? '<span class="here">¡Aquí!</span>' : ''}</button>`;
+          <span class="nb" lang="ja">${d ? '✓' : un ? esc(l.icon) : '🔒'}</span><span class="nl">${esc(l.title)}</span>${cur ? `<span class="here">${t('path.here')}</span>` : ''}</button>`
+          + READINGS.filter(r => r.after === l.id).map(r => {
+            const rd = !!S.me()?.readings[r.id];
+            return d ? `<a class="node rnode ${rd ? 'done' : ''}" style="--o:${off}" href="#/lectura/${r.id}"><span class="nb" lang="ja">${rd ? '✓' : '📖'}</span><span class="nl">${t('path.reading')}: ${esc(r.es)}</span></a>`
+              : `<span class="node rnode locked" style="--o:${off}"><span class="nb">📖</span><span class="nl">${t('path.reading')}: ${esc(r.es)}</span></span>`;
+          }).join('');
       }).join('')}</div></div>`;
   }
   html += `<a class="callout link center" href="#/examen"><b>🎓 Meta: el JLPT N5.</b> Al terminar el camino, ponte a prueba con el simulacro del examen.</a>`;
@@ -108,18 +115,23 @@ function modal(html) {
 
 function preview(l) {
   const un = S.isUnlocked(l.id), d = S.lessonDone(l.id);
+  const run = savedRun('lesson', l);
   const words = (l.words || []).map(lookup).filter(Boolean);
   const kana = splitKana(l.kana || '').filter(k => KANA[k]);
   const m = modal(`<div class="kicker">${esc(UNITS.find(u => u.id === l.unit).title)} · Lección ${LESSON_INDEX[l.id] + 1}</div>
     <h2>${esc(l.icon)} ${esc(l.title)}</h2><p>${esc(l.goal || '')}</p>
     ${kana.length ? `<h4>Caracteres</h4><div class="chips kana">${kana.map(k => `<span lang="ja">${k}</span>`).join('')}</div>` : ''}
-    ${l.kanji ? `<h4>Kanji</h4><div class="chips kana">${[...l.kanji].map(k => `<span lang="ja" title="${esc(KANJI[k]?.es)}">${k}</span>`).join('')}</div>` : ''}
+    ${l.kanji ? `<h4>${t('prev.kanji')}</h4><div class="chips kana">${[...l.kanji].map(k => `<span lang="ja" title="${esc(KANJI[k]?.es)}">${k}</span>`).join('')}</div>` : ''}
     ${l.grammar?.length ? `<h4>Gramática</h4><ul class="gram">${l.grammar.map(g => `<li>${rich(g)}</li>`).join('')}</ul>` : ''}
-    ${words.length ? `<h4>Palabras nuevas (${words.length})</h4><div class="chips">${words.map(e => `<span>${jp(e.w === e.r || /[゠-ヿ]/.test(e.w) || l.unit <= 'u3' ? e.r : e.w)} <small>${esc(e.es)}</small></span>`).join('')}</div>` : ''}
-    <div class="row">${un ? `<a class="btn primary wide" href="#/leccion/${l.id}">${d ? 'Repasar lección' : 'Empezar'}</a>`
+    ${words.length ? `<h4>${t('prev.words')} (${words.length})</h4><div class="chips">${words.map(e => `<span>${jp(e.w === e.r || /[゠-ヿ]/.test(e.w) || l.unit <= 'u3' ? e.r : e.w)} <small>${esc(e.es)}</small></span>`).join('')}</div>` : ''}
+    ${l.later?.length ? `<p class="muted small">Y ${l.later.length} palabras más que entran a tu repaso al terminar.</p>` : ''}
+    <div class="row">${un && run ? `<a class="btn primary wide" href="#/leccion/${l.id}">${t('prev.continue')} · ${runLabel(run)}</a><a class="btn ghost wide" href="#/leccion/${l.id}/nuevo">Empezar de nuevo</a>`
+      : un ? `<a class="btn primary wide" href="#/leccion/${l.id}">${t(d ? 'prev.again' : 'path.start')}</a>`
       : `<p class="muted">🔒 Completa la lección anterior, o usa «⏩ Ya lo sé» en la unidad para saltar con una prueba.</p>`}</div>`);
   $$('a', m.el).forEach(a => a.addEventListener('click', m.close));
 }
+
+const runLabel = r => r.parts.length > 1 ? `tramo ${(r.items[r.order[Math.min(r.st.i, r.order.length - 1)]]?.part ?? 0) + 1} de ${r.parts.length}` : `paso ${r.st.i + 1} de ${r.order.length}`;
 
 function skipDialog(u) {
   const ui = UNITS.indexOf(u);
@@ -217,6 +229,7 @@ function viewProfile() {
       <label>Sonido y voz<select data-set="sound">${opt('sound', true, 'Activado')}${opt('sound', false, 'Desactivado')}</select></label>
       <label>Velocidad de la voz<select data-set="rate">${opt('rate', 0.65, 'Lenta')}${opt('rate', 0.85, 'Normal')}${opt('rate', 1, 'Natural')}</select></label>
       <label>Meta diaria<select data-set="goal">${opt('goal', 30, '30 XP · relajada')}${opt('goal', 50, '50 XP · normal')}${opt('goal', 100, '100 XP · intensa')}</select></label>
+      <label>Interfaz en japonés<select data-set="uiJp">${opt('uiJp', true, 'A medida que aprendo las palabras')}${opt('uiJp', false, 'Siempre en español')}</select></label>
       <label>Desbloquear todo el camino<select data-set="unlockAll">${opt('unlockAll', false, 'No (en orden)')}${opt('unlockAll', true, 'Sí (elegir libremente)')}</select></label>
       ${ttsAvailable() && !hasJapaneseVoice() ? '<p class="muted small">⚠️ Tu navegador no tiene una voz japonesa instalada; la pronunciación puede no funcionar. Prueba con Chrome o Edge, o instala una voz japonesa en tu sistema.</p>' : ''}
     </div>
@@ -296,7 +309,7 @@ export function go(h) { if (location.hash === h) route(); else location.hash = h
 function route() {
   closePop();
   document.querySelectorAll('.modal').forEach(m => m.remove());
-  const [, view, arg] = (location.hash || '#/camino').split('/');
+  const [, view, arg, opt] = (location.hash || '#/camino').split('/');
   if (!S.me() && view !== 'perfiles') return go('#/perfiles');
   document.body.dataset.view = view || 'camino';
   window.scrollTo(0, 0);
@@ -305,7 +318,9 @@ function route() {
     case 'leccion': {
       const l = LESSONS[LESSON_INDEX[arg]];
       if (!l || !S.isUnlocked(l.id)) return go('#/camino');
-      return viewPlayer({ mode: 'lesson', lesson: l });
+      // sin «nuevo» en la URL, recargar a mitad de lección la retoma en vez de reiniciarla
+      if (opt === 'nuevo') history.replaceState(null, '', '#/leccion/' + l.id);
+      return viewPlayer({ mode: 'lesson', lesson: l, fresh: opt === 'nuevo' });
     }
     case 'prueba': { const u = UNITS.find(x => x.id === arg); return u ? viewPlayer({ mode: 'test', unit: u }) : go('#/camino'); }
     case 'repasar': {

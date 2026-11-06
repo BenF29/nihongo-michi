@@ -6,6 +6,7 @@ import { tokenize, checkAnswer, readingVoice } from './dict.js';
 import * as S from './state.js';
 import { speak, stopSpeaking } from './tts.js';
 import { esc, $, $$, jp, rich, spoken, sfx, confetti, romajiToHira, toast } from './ui.js';
+import { t } from './uitext.js';
 
 export const LEVELS = {
   1: { name: 'Primeras lecturas', hint: 'tras «Primeros pasos»', color: '#1971c2' },
@@ -35,7 +36,7 @@ export function renderList(root) {
   for (const r of READINGS) (byLevel[r.level] ||= []).push(r);
   const recs = READINGS.map(r => [r, coverage(r)]).filter(([r, c]) => !S.me()?.readings[r.id] && c.pct >= 90);
   root.innerHTML = `<section class="page">
-    <h1>読 Lecturas</h1>
+    <h1>読 ${t('nav.lecturas')}</h1>
     <p class="lead">Textos graduados para practicar comprensión. El porcentaje indica cuántas palabras del texto ya conoces: con <b>más de 90 %</b> la lectura es cómoda y aprendes las palabras nuevas por contexto.</p>
     ${recs.length ? `<div class="callout">✨ Tienes <b>${recs.length}</b> lectura${recs.length > 1 ? 's' : ''} lista${recs.length > 1 ? 's' : ''} para ti.</div>` : `<div class="callout muted">Avanza en el camino para desbloquear más vocabulario: las lecturas se vuelven comprensibles a medida que aprendes.</div>`}
     ${Object.keys(byLevel).sort().map(lv => `
@@ -90,7 +91,7 @@ export function renderReading(root, id) {
       <div class="lp-prog"><div class="meter"><i style="width:0"></i></div><span id="lpN">Oración 1 de ${sents.length}</span></div>
     </div>` : ''}
     <div class="r-tools">
-      ${listen ? '' : '<button class="btn sm ghost" id="playAll">▶ Escuchar</button>'}
+      ${listen ? '' : `<button class="btn sm ghost" id="playAll">▶ ${t('r.listen')}</button>`}
       <label class="sw"><input type="checkbox" id="trT"> Traducción</label>
       <label class="sw"><input type="checkbox" id="newT" checked> Resaltar palabras nuevas</label>
       <select id="furi" aria-label="Furigana"><option value="auto">Furigana: kanji no aprendidos</option><option value="always">Furigana: siempre</option><option value="never">Furigana: nunca</option></select>
@@ -104,7 +105,7 @@ export function renderReading(root, id) {
       <div class="nwlist">${c.unknown.map(e => `<div class="nw">${jp(`${e.w}=${e.id}`)} <span class="muted">${esc(e.r)}</span> — ${esc(e.es)}</div>`).join('')}</div>
       <button class="btn sm" id="addAll">+ Añadir todas a mi repaso</button></details>` : ''}
     <section class="questions">
-      <h2>Preguntas de comprensión</h2>
+      <h2>${t('r.questions')}</h2>
       <p class="muted small">${listen ? 'Responde a partir de lo que escuchaste. Si te equivocas, puedes volver a escuchar la parte clave.' : 'Responde cada una y presiona «Comprobar». Si te equivocas, te mostramos en qué parte del texto está la respuesta.'}</p>
       ${r.questions.map((q, i) => qHTML(q, i)).join('')}
       <div class="qscore hidden"></div>
@@ -219,7 +220,7 @@ export function renderReading(root, id) {
     box.innerHTML = `<div class="done-ic">${perfect ? '🌸' : score >= results.length / 2 ? '⭐' : '📖'}</div>
       <h3>${score} de ${results.length} correctas · +${score * 10 + 10} XP</h3>
       <p>${perfect ? (byEar ? '¡Comprensión auditiva perfecta: lo entendiste sin leerlo!' : '¡Comprensión perfecta!') : byEar ? 'Muestra el texto y léelo mientras escuchas: luego inténtalo otra vez solo escuchando.' : 'Relee las oraciones resaltadas y vuelve a intentarlo cuando quieras.'}</p>
-      <div class="row center"><button class="btn ghost" id="retry">Intentar de nuevo</button>${nextR ? `<a class="btn primary" href="#/lectura/${nextR[0].id}">Siguiente lectura →</a>` : ''}</div>`;
+      <div class="row center"><button class="btn ghost" id="retry">${t('prev.again')}</button>${nextR ? `<a class="btn primary" href="#/lectura/${nextR[0].id}">${t('r.next')} →</a>` : ''}</div>`;
     $('#retry', box).onclick = () => { renderReading(root, id); scrollTo(0, 0); };
   }
 }
@@ -230,5 +231,5 @@ function qHTML(q, i) {
   if (q.t === 'mc') body = `<div class="ropts">${q.opts.map((o, k) => `<button class="ro" data-v="${k}">${/[぀-ヿ一-龯]/.test(o) ? jp(o) : rich(o)}</button>`).join('')}</div>`;
   else if (q.t === 'tf') body = `<div class="ropts tf"><button class="ro" data-v="true">Verdadero</button><button class="ro" data-v="false">Falso</button></div>`;
   else body = `<div class="rtext"><input placeholder="Escribe en japonés (o en romaji)" autocomplete="off" autocapitalize="off" spellcheck="false" lang="ja"><span class="conv muted small"></span></div>`;
-  return `<div class="rq">${head}${body}<button class="btn sm primary check" disabled>Comprobar</button><div class="rfb"></div></div>`;
+  return `<div class="rq">${head}${body}<button class="btn sm primary check" disabled>${t('p.check')}</button><div class="rfb"></div></div>`;
 }

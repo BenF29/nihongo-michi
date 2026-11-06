@@ -31,7 +31,7 @@ Un token es `superficie[|lectura][=lema][:etiqueta]`:
 - Partículas ambiguas: `に` es la partícula; el número dos es `に=二` o `二`. `さん` es el sufijo; tres es `三`. `から` = "desde"; "porque" es `から=から#porque`. `なん` (qué) existe como id propio; con kanji: `何|なん=なん`.
 - Nombres propios (`アナ`, `ケン`, `田中`…) están en el diccionario como `name` y siempre cuentan como conocidos.
 
-**Regla de oro (i+1):** en una lección solo pueden aparecer palabras introducidas en esa lección o antes (el validador lo comprueba). En las unidades de kana, solo kana ya aprendidos.
+**Regla de oro (i+1):** en una lección solo pueden aparecer palabras de su `words` o de lecciones anteriores (`words` o `later`); las `later` de la propia lección **no** (el validador lo comprueba). En las unidades de kana, solo kana ya aprendidos.
 
 **Kanji:** escribe una palabra con kanji solo si sus kanji ya se enseñaron (`kanji` en el currículo) o si quieres exponer kanji nuevo: la app muestra furigana automáticamente sobre los kanji que el usuario aún no aprendió. En las unidades 1–3 escribe todo en kana.
 
@@ -43,7 +43,28 @@ export default {
 };
 ```
 
-Lo que introduce cada lección (kana, kanji, palabras) está en `curriculum.js`. Una lección típica (8–15 min): enseñar → práctica guiada → producción → repaso.
+Lo que introduce cada lección (kana, kanji, palabras) está en `curriculum.js`:
+- `words`: el núcleo (4–8 palabras, incluidas las gramaticales): lo que la lección enseña y usa en sus oraciones.
+- `later`: palabras que **no** se ven en la lección; al terminarla entran al repaso como tarjetas nuevas (máx. 10 por sesión). Se pueden usar desde la lección siguiente.
+
+### Estructura de una lección de gramática (unidades 3–15)
+
+La lección enseña **gramática**, no listas de palabras. Modelo: `u5l1` en `lessons/u5.js`. Cuatro tramos (`part`), 25–35 pasos en total:
+
+1. **Regla**: `teach` con la regla y ejemplos (`ex`); `kanji` si la lección tiene; `words` solo con las palabras del núcleo que sean de contenido (no partículas).
+2. **Transformar**: `transform` (escribir la forma), `mc`/`fill` con distractores gramaticales y algún `error`. Es el corazón de la lección: practicar la regla aislada.
+3. **Oraciones**: la regla dentro de oraciones (`fill`, `build`, `error`, un `teach` corto si hay un segundo punto).
+4. **Producir**: `write`, `answer` (responder una pregunta en japonés, **sin** traducción), un `dialog` seguido de 1–2 `mc` de comprensión sobre el diálogo, y un `dictation`.
+
+No uses `auto` ni `match` de vocabulario: el vocabulario se practica en el repaso.
+
+### Instrucciones que pasan a japonés
+
+Los enunciados generados por la app (¿Qué significa?, Completa la oración, Responde en japonés…) pasan solos a japonés cuando el usuario aprende sus palabras. Para un paso escrito a mano:
+- `q: '@clave'` usa una plantilla de `js/data/uitext.js` (p. ej. `@q.fill`, `@q.answer`) y se traduce con el avance. Un `q` libre queda en español.
+- `qjp` (en `mc`): la pregunta escrita en japonés, p. ej. de comprensión de un diálogo (`qjp: 'ケン さん は 朝ごはん を 食べます=食べる か 。'`), con `q` como traducción. Úsalo desde la unidad 8, con palabras ya enseñadas.
+
+Una lección típica (15–20 min, en tramos de ~5).
 
 ### Tipos de paso
 
@@ -93,7 +114,28 @@ Lo que introduce cada lección (kana, kanji, palabras) está en `curriculum.js`.
 
 // Escribir la lectura en romaji
 { t: 'type', q: '¿Cómo se lee?', jp: 'さくら' }
+
+// Tramo: divide la lección en partes de ~5 min; cada tramo terminado es un punto para salir y retomar.
+// Sin pasos 'part', la app empieza un tramo en cada 'teach' (si el anterior tiene al menos 6 pasos).
+{ t: 'part', title: 'Transformar' }
+
+// Transformar: dada una forma, escribir otra (sin alternativas)
+{ t: 'transform', q: 'Escribe la forma ます', jp: '飲む', a: '飲みます=飲む', alt: [], why: '…' }
+
+// Encontrar el error: bad = la palabra que está mal (tal como aparece en jp); fix = la oración corregida
+{ t: 'error', jp: 'わたし は 水 を 飲むます=飲む 。', bad: '飲むます', fix: 'わたし は 水 を 飲みます=飲む 。', es: 'Yo bebo agua.', why: '…' }
+
+// Responder en japonés con palabras propias. Se acepta cualquier respuesta que termine en pat
+// (texto o lista); a = respuestas modelo (la primera se muestra si falla). La pregunta no muestra traducción.
+// pat debe ser el final obligado de la respuesta (verbo + partícula clave); nada puede ir después.
+{ t: 'answer', jp: '毎日 なに を 飲みます=飲む か 。', pat: 'を 飲みます=飲む', a: ['コーヒー を 飲みます=飲む 。'], why: '…' }
 ```
+
+Reglas para que las preguntas midan gramática y no se resuelvan descartando:
+- Las alternativas de un `fill` o `mc` de gramática son **la misma palabra en formas distintas** (読みます／読むます／読みません), no palabras de significado distinto.
+- Ninguna forma conjugada aparece antes de la lección que enseña cómo se forma: el validador lo comprueba (`FORM_TAUGHT` en `js/data/curriculum.js`). Las oraciones con error de los pasos `error` quedan excluidas.
+- Antes de pedir una forma nueva (transform, fill, write), la lección tiene que haber explicado **cómo se forma**, no solo mostrarla.
+- Un `error` tiene un solo error claro, de la gramática de la lección o de una anterior.
 
 `why` (opcional pero recomendado) se muestra después de responder, acierte o no: explica *por qué*.
 `a` es el índice (desde 0) de la opción correcta. La app baraja las opciones.

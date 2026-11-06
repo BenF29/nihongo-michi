@@ -22,7 +22,7 @@ export const POS = {
 
 // Lección donde se enseña cada palabra
 export const WORD_LESSON = {};
-LESSONS.forEach((l, i) => (l.words || []).forEach(w => { const e = lookup(w); if (e) WORD_LESSON[e.id] = { l, i }; }));
+LESSONS.forEach((l, i) => [...(l.words || []), ...(l.later || [])].forEach(w => { const e = lookup(w); if (e) WORD_LESSON[e.id] = { l, i }; }));
 
 export function romajiOf(e, reading) {
   return toRomaji(reading || e.r, { particle: e.pos === 'prt' });

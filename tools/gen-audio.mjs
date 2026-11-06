@@ -49,7 +49,7 @@ for (const steps of Object.values(STEPS)) for (const s of steps) {
   for (const [who, j] of s.lines || []) addJp(j, voiceOf(who));
   for (const m of `${s.body || ''} ${s.tip || ''} ${s.title || ''}`.matchAll(/\{([^}]+)\}/g)) addJp(m[1]);
   if (s.opts && !s.kana && (s.t === 'fill' || s.opts.every(hasJp))) s.opts.forEach(o => addJp(o));
-  for (const x of [...(s.extra || []), ...(s.alt || [])]) addJp(x);
+  for (const x of [...(s.extra || []), ...(s.alt || []), ...(s.t === 'transform' || s.t === 'answer' ? [].concat(s.a) : []), ...(s.fix ? [s.fix] : [])]) addJp(x);
   for (const [a] of s.pairs || []) if (hasJp(a)) addJp(a);
 }
 for (const r of READINGS) {

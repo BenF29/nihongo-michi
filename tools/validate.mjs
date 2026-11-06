@@ -2,15 +2,17 @@
 // - todas las palabras existen en el diccionario
 // - cada lección usa solo palabras ya introducidas (i+1) y, en unidades de kana, solo kana aprendidos
 // - estructura de los pasos y preguntas
+// - ninguna forma conjugada (買います, 食べて…) aparece antes de la lección que enseña cómo se forma
 // - cobertura de vocabulario de cada lectura en el punto del camino indicado por `after`
 
-import { ENTRIES, lookup, tokenize, isPunct } from '../js/dict.js';
-import { UNITS, LESSONS, LESSON_INDEX } from '../js/data/curriculum.js';
+import { ENTRIES, lookup, tokenize, isPunct, inflectionLabel, masuForm, formTaughtIn } from '../js/dict.js';
+import { UNITS, LESSONS, LESSON_INDEX, FORM_TAUGHT } from '../js/data/curriculum.js';
 import { KANJI } from '../js/data/kanji.js';
 import { KANA } from '../js/data/kana.js';
 import { STEPS } from '../js/data/lessons/index.js';
 import READINGS from '../js/data/readings.js';
 import { BANK } from '../js/data/exam/index.js';
+import { UI, unlockIndex } from '../js/data/uitext.js';
 
 const errors = [], warns = [];
 const err = (where, msg) => errors.push(`✗ ${where}: ${msg}`);
@@ -19,9 +21,13 @@ const hasJp = s => /[぀-ヿ一-龯]/.test(s);
 
 // ── Diccionario y currículo ──
 for (const e of Object.values(ENTRIES)) if (e.dup) err('vocab', `id duplicado: ${e.id}`);
+// la tarjeta de cada verbo muestra su forma ます: todos deben poder generarla
+for (const e of Object.values(ENTRIES)) if (/^v[135]$/.test(e.pos) && !masuForm(e)) err('vocab', `no se puede formar el ます de ${e.w} (${e.pos})`);
+console.assert(['買う', '食べる', '来る', 'する', '帰る'].map(w => masuForm(lookup(w))).join() === '買います,食べます,来ます,します,帰ります', 'masuForm');
 const introducedIn = {};
 for (const l of LESSONS) {
-  for (const w of l.words || []) {
+  if (l.later && (l.words?.length || 0) > 12) warn(l.id, `${l.words.length} palabras en el núcleo (el resto va en later)`);
+  for (const w of [...(l.words || []), ...(l.later || [])]) {
     const e = lookup(w);
     if (!e) { err(l.id, `palabra del currículo no está en vocab: ${w}`); continue; }
     if (introducedIn[e.id]) err(l.id, `${w} ya se introduce en ${introducedIn[e.id]}`);
@@ -30,6 +36,13 @@ for (const l of LESSONS) {
   for (const k of l.kanji || '') if (!KANJI[k]) err(l.id, `kanji sin datos en kanji.js: ${k}`);
   for (const k of l.kana || '') if (!KANA[k]) err(l.id, `kana desconocido: ${k}`);
   if (!STEPS[l.id]) warn(l.id, 'sin pasos todavía');
+}
+
+for (const m of Object.values(FORM_TAUGHT)) for (const id of Object.values(m)) if (!(id in LESSON_INDEX)) err('validador', `FORM_TAUGHT apunta a una lección inexistente: ${id}`);
+// Devuelve la lección donde se enseña la forma de este token, si todavía no se enseñó en `li`
+function formNotYet(tok, li) {
+  const at = formTaughtIn(tok);
+  return at && LESSON_INDEX[at] > li ? [tok.label || inflectionLabel(tok.surface, tok.entry), at] : null;
 }
 
 // ── Recolectar textos japoneses de un paso ──
@@ -45,6 +58,10 @@ function jpTexts(s) {
   if (s.extra) s.extra.forEach(add);
   if (s.alt) s.alt.forEach(add);
   if (s.pairs) s.pairs.forEach(p => add(p[0]));
+  if (s.t === 'transform' || s.t === 'answer') [].concat(s.a ?? []).forEach(add);
+  if (s.t === 'error') add(s.fix);
+  if (s.t === 'answer') [].concat(s.pat ?? []).forEach(add);
+  add(s.qjp);
   return out;
 }
 
@@ -67,17 +84,29 @@ function checkStep(where, s) {
     case 'dictation': need('jp'); break;
     case 'match': if (s.pairs && s.pairs.length < 3) warn(where, 'match con menos de 3 pares'); break;
     case 'type': need('jp'); break;
+    case 'transform': need('q', 'jp', 'a'); break;
+    case 'error':
+      need('jp', 'bad', 'fix');
+      if (s.jp && s.bad && !tokenize(s.jp).some(t => t.surface === s.bad)) err(where, `"bad" «${s.bad}» no es un token de jp`);
+      break;
+    case 'answer':
+      need('jp', 'pat', 'a');
+      if (s.a && !Array.isArray(s.a)) err(where, '"a" debe ser una lista de respuestas modelo');
+      break;
+    case 'part': need('title'); break;
     case 'words': case 'kana': case 'kanji': case 'kanaquiz': case 'auto': break;
     default: err(where, `tipo de paso desconocido: ${s.t}`);
   }
+  if (typeof s.q === 'string' && s.q.startsWith('@') && !UI[s.q.slice(1)]) err(where, `plantilla desconocida: ${s.q}`);
 }
 
 // ── Lecciones ──
 const known = new Set();
 const knownKana = new Set();
-let wordUses = {};
+let wordUses = {}, laterPrev = [];
 for (const l of LESSONS) {
-  for (const w of l.words || []) { const e = lookup(w); if (e) known.add(e.id); }
+  for (const w of [...(l.words || []), ...laterPrev]) { const e = lookup(w); if (e) known.add(e.id); }
+  laterPrev = l.later || [];
   for (const k of l.kana || '') knownKana.add(k);
   const kanaUnit = l.unit === 'u1' || l.unit === 'u2';
   const steps = STEPS[l.id] || [];
@@ -85,12 +114,16 @@ for (const l of LESSONS) {
     const where = `${l.id}#${i}(${s.t})`;
     checkStep(where, s);
     for (const text of jpTexts(s)) {
+      const isError = s.t === 'error' && text === s.jp;
       for (const tok of tokenize(text)) {
         if (tok.punct || tok.blank) continue;
         if (!tok.entry) { err(where, `palabra desconocida «${tok.raw}» en: ${text}`); continue; }
+        const nf = !isError && formNotYet(tok, LESSON_INDEX[l.id]);
+        if (nf) err(where, `«${tok.surface}» (${nf[0]}) se usa antes de enseñar cómo se forma (${nf[1]})`);
         if (tok.entry.pos !== 'name' && !known.has(tok.entry.id)) {
           const at = introducedIn[tok.entry.id];
-          err(where, `«${tok.raw}» aún no se enseña${at ? ` (se introduce en ${at})` : ' (no está en ninguna lección)'}`);
+          const lat = LESSONS[LESSON_INDEX[at]]?.later?.some(w => lookup(w)?.id === tok.entry.id);
+          err(where, `«${tok.raw}» aún no se enseña${at ? lat ? ` (está en later de ${at}: solo se puede usar desde la lección siguiente)` : ` (se introduce en ${at})` : ' (no está en ninguna lección)'}`);
         }
         if (kanaUnit) for (const ch of tok.surface) if (!knownKana.has(ch) && ch !== 'ー') err(where, `kana «${ch}» aún no aprendido en «${tok.surface}»`);
         if (!tok.reading && /[一-龯]/.test(tok.surface)) warn(where, `no se pudo deducir la lectura de «${tok.raw}» (usa |lectura)`);
@@ -105,7 +138,7 @@ for (const l of LESSONS) {
 const knownAt = {};
 {
   const acc = new Set();
-  for (const l of LESSONS) { for (const w of l.words || []) { const e = lookup(w); if (e) acc.add(e.id); } knownAt[l.id] = new Set(acc); }
+  for (const l of LESSONS) { for (const w of [...(l.words || []), ...(l.later || [])]) { const e = lookup(w); if (e) acc.add(e.id); } knownAt[l.id] = new Set(acc); }
 }
 const cov = [];
 const ids = new Set();
@@ -229,10 +262,19 @@ if (process.argv.includes('--coverage') || cov.length) {
   console.log('\nCobertura de lecturas (palabras conocidas al terminar `after`):');
   for (const [id, lv, after, pct, n, unk] of cov) console.log(`  ${id} N${lv} tras ${after}: ${pct}% de ${n} palabras${unk ? `  · nuevas: ${unk}` : ''}`);
 }
-const unused = Object.keys(introducedIn).filter(id => !wordUses[id] && ENTRIES[id].pos !== 'name');
+// las `later` se aprenden en el repaso: no hace falta que aparezcan en las lecciones
+const laterIds = new Set(LESSONS.flatMap(l => (l.later || []).map(w => lookup(w)?.id)));
+const unused = Object.keys(introducedIn).filter(id => !wordUses[id] && ENTRIES[id].pos !== 'name' && !laterIds.has(id));
 if (unused.length) warn('vocab', `palabras introducidas que no aparecen en ningún texto de lección: ${unused.join(' ')}`);
 
 console.log(`\nLecciones con pasos: ${LESSONS.filter(l => STEPS[l.id]).length}/${LESSONS.length} · Lecturas: ${cov.length} · Palabras: ${Object.keys(ENTRIES).length} · Preguntas de examen: ${examN}`);
+// ── Textos de la interfaz: todos deben poder pasar a japonés ──
+const uiAt = Object.entries(UI).map(([k, u]) => [k, u, unlockIndex(u.jp)]);
+for (const [k, u, at] of uiAt) if (at < 0) err('interfaz', `${k}: «${u.jp}» usa palabras que no están en el camino`);
+if (process.argv.includes('--ui')) {
+  console.log('\nCuándo pasa a japonés cada texto de la interfaz:');
+  for (const [k, u, at] of uiAt.sort((a, b) => a[2] - b[2])) console.log(`  ${at < 0 ? '—' : LESSONS[at].id.padEnd(6)}  ${k.padEnd(18)} ${u.es}  →  ${u.jp}`);
+}
 if (process.argv.includes('-w') || process.argv.includes('--warn')) warns.forEach(w => console.log(w));
 else if (warns.length) console.log(`${warns.length} advertencias (usa -w para verlas)`);
 errors.forEach(e => console.log(e));

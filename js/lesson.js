@@ -9,10 +9,15 @@ import { LESSONS, LESSON_INDEX, UNITS } from './data/curriculum.js';
 import { STEPS } from './data/lessons/index.js';
 import { KANA, splitKana } from './data/kana.js';
 import { KANJI } from './data/kanji.js';
-import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf, checkAnswer, toKanaInput, textReading } from './dict.js';
+import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf, checkAnswer, toKanaInput, textReading, looseKana, answerForms, masuForm } from './dict.js';
 import * as S from './state.js';
+import READINGS from './data/readings.js';
 import { speak, stopSpeaking } from './tts.js';
-import { esc, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, sayBtn, spoken, sfx, confetti, POS, romajiOf, closePop } from './ui.js';
+import { esc, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, sayBtn, spoken, sfx, POS, romajiOf, closePop } from './ui.js';
+import { t } from './uitext.js';
+
+// Enunciado de una pregunta: '@clave' usa una plantilla de uitext.js (pasa a japonés con el avance)
+const qlab = (q, def) => q?.startsWith('@') ? t(q.slice(1)) : q ? rich(q) : t(def);
 
 // ───── Conjuntos de referencia según el currículo ─────
 const wordsUpTo = (() => {
@@ -20,7 +25,7 @@ const wordsUpTo = (() => {
   return i => {
     if (cache[i]) return cache[i];
     const s = [];
-    for (const l of LESSONS.slice(0, i + 1)) for (const w of l.words || []) { const e = lookup(w); if (e) s.push(e); }
+    for (const l of LESSONS.slice(0, i + 1)) for (const w of [...(l.words || []), ...(l.later || [])]) { const e = lookup(w); if (e) s.push(e); }
     return (cache[i] = s);
   };
 })();
@@ -32,11 +37,16 @@ const kanaUpTo = (i, script) => {
 const entriesOf = l => (l.words || []).map(lookup).filter(Boolean);
 
 // ───── Generadores de preguntas ─────
-function distractors(e, pool, n, field) {
+// similar: preferir palabras parecidas en forma y sonido (買う／会う／言う), para que no se descarten a ojo
+function distractors(e, pool, n, field, similar) {
   const same = pool.filter(x => x.id !== e.id && x.pos !== 'name' && x[field] !== e[field] && x.es !== e.es);
   const pref = same.filter(x => x.pos === e.pos);
+  const kana = new Set(e.r);
+  const score = x => (x.pos === e.pos ? 3 : 0) + (x.r.at(-1) === e.r.at(-1) ? 2 : 0) + [...new Set(x.r)].filter(c => kana.has(c)).length
+    - Math.abs(x.r.length - e.r.length) / 2 + Math.random() * 1.5;
+  const order = similar ? same.map(x => [x, score(x)]).sort((a, b) => b[1] - a[1]).map(x => x[0]) : [...shuffle(pref), ...shuffle(same)];
   const out = []; const seen = new Set([e[field]]);
-  for (const x of [...shuffle(pref), ...shuffle(same)]) {
+  for (const x of order) {
     if (out.length >= n) break;
     if (!seen.has(x[field])) { seen.add(x[field]); out.push(x); }
   }
@@ -44,21 +54,21 @@ function distractors(e, pool, n, field) {
 }
 const wordHtml = (e, big) => jp(e.w === e.r || /[゠-ヿ]/.test(e.w) ? e.r : e.w, { cls: big ? 'big' : '', plain: !big });
 
-function qJpToEs(e, pool, srs) {
-  const ds = distractors(e, pool, 3, 'es');
-  return { kind: 'choice', srs, prompt: `<div class="qlabel">¿Qué significa?</div><div class="qjp">${wordHtml(e, true)} ${sayBtn(sayWord(e))}</div>`,
+function qJpToEs(e, pool, srs, similar) {
+  const ds = distractors(e, pool, 3, 'es', similar);
+  return { kind: 'choice', srs, prompt: `<div class="qlabel">${t('q.meaning')}</div><div class="qjp">${wordHtml(e, true)} ${sayBtn(sayWord(e))}</div>`,
     say: sayWord(e), opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: esc(x.es) })), answer: e.id,
     why: `${esc(e.w)}${e.w !== e.r ? ` (${esc(e.r)})` : ''} = <b>${esc(e.es)}</b>` };
 }
-function qEsToJp(e, pool, srs) {
-  const ds = distractors(e, pool, 3, 'r');
-  return { kind: 'choice', srs, prompt: `<div class="qlabel">¿Cómo se dice?</div><div class="qes">«${esc(e.es)}»</div>`,
+function qEsToJp(e, pool, srs, similar) {
+  const ds = distractors(e, pool, 3, 'r', similar);
+  return { kind: 'choice', srs, prompt: `<div class="qlabel">${t('q.say')}</div><div class="qes">«${esc(e.es)}»</div>`,
     opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: wordHtml(x), say: sayWord(x) })), answer: e.id,
     why: `«${esc(e.es)}» = <span lang="ja">${esc(e.w)}</span>${e.w !== e.r ? ` (${esc(e.r)})` : ''}`, after: sayWord(e) };
 }
-function qListenWord(e, pool, srs) {
-  const ds = distractors(e, pool, 3, 'es');
-  return { kind: 'choice', srs, listen: sayWord(e), prompt: `<div class="qlabel">Escucha y elige el significado</div>${listenBox(sayWord(e))}`,
+function qListenWord(e, pool, srs, similar) {
+  const ds = distractors(e, pool, 3, 'es', similar);
+  return { kind: 'choice', srs, listen: sayWord(e), prompt: `<div class="qlabel">${t('q.listenMeaning')}</div>${listenBox(sayWord(e))}`,
     opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: esc(x.es) })), answer: e.id,
     why: `Era <span lang="ja">${esc(e.w)}</span> (${esc(e.r)}) = <b>${esc(e.es)}</b>` };
 }
@@ -67,7 +77,7 @@ const listenBox = text => `<div class="listen"><button class="play big" data-say
 function qKana(k, pool, type) {
   const r = KANA[k].r;
   const others = pick(pool.filter(x => x !== k && KANA[x].r !== r), 3);
-  if (type === 'k2r') return { kind: 'choice', prompt: `<div class="qlabel">¿Cómo se lee?</div><div class="kana-big" lang="ja">${k}</div>`,
+  if (type === 'k2r') return { kind: 'choice', prompt: `<div class="qlabel">${t('q.read')}</div><div class="kana-big" lang="ja">${k}</div>`,
     opts: shuffle([k, ...others]).map(x => ({ key: x, html: esc(KANA[x].r) })), answer: k, why: `${k} = <b>${r}</b>. ${esc(KANA[k].m || '')}`, after: k };
   if (type === 'r2k') return { kind: 'choice', prompt: `<div class="qlabel">¿Cuál es <b>${esc(r)}</b>?</div>`,
     opts: shuffle([k, ...others]).map(x => ({ key: x, html: `<span class="kana-opt" lang="ja">${x}</span>` })), answer: k, why: `${esc(r)} = ${k}. ${esc(KANA[k].m || '')}`, after: k };
@@ -85,7 +95,7 @@ function qTypeReading(text, why) {
 function qKanji(k, pool) {
   const K = KANJI[k];
   const others = pick(pool.filter(x => x !== k && KANJI[x] && KANJI[x].es !== K.es), 3);
-  return { kind: 'choice', prompt: `<div class="qlabel">¿Qué significa este kanji?</div><div class="kanji-big" lang="ja">${k}</div>`,
+  return { kind: 'choice', prompt: `<div class="qlabel">${t('q.kanji')}</div><div class="kanji-big" lang="ja">${k}</div>`,
     opts: shuffle([k, ...others]).map(x => ({ key: x, html: esc(KANJI[x].es) })), answer: k, why: `${k} = <b>${esc(K.es)}</b>. ${esc(K.mn)}` };
 }
 function buildItem(s) {
@@ -96,18 +106,18 @@ function buildItem(s) {
 }
 // Producción: escribir la oración en japonés (kana, kanji o romaji). Las fichas quedan como ayuda.
 function qWrite(s) {
-  return { kind: 'write', prompt: `<div class="qlabel">✍️ Escribe en japonés</div><div class="qes">«${rich(s.es)}»</div>`,
+  return { kind: 'write', prompt: `<div class="qlabel">✍️ ${t('q.write')}</div><div class="qes">«${rich(s.es)}»</div>`,
     targets: [s.jp, ...(s.alt || [])], jpText: s.jp, why: rich(s.why), after: spoken(s.jp), hint: buildItem({ ...s, extra: [] }) };
 }
 function qWriteWord(e, srs) {
   const shown = e.w === e.r || /[\u30a0-\u30ff]/.test(e.w) ? e.r : e.w;
-  return { kind: 'write', srs, prompt: `<div class="qlabel">✍️ ¿Cómo se dice en japonés?</div><div class="qes">«${esc(e.es)}»</div>`,
+  return { kind: 'write', srs, prompt: `<div class="qlabel">✍️ ${t('q.sayWrite')}</div><div class="qes">«${esc(e.es)}»</div>`,
     targets: [`${e.w}=${e.id}`], jpText: `${shown}=${e.id}`, after: sayWord(e),
     why: `«${esc(e.es)}» = <span lang="ja">${esc(e.w)}</span>${e.w !== e.r ? ` (${esc(e.r)})` : ''}` };
 }
 // Dictado: escuchar y escribir
 function qDictation(text, es) {
-  return { kind: 'write', listen: spoken(text), prompt: `<div class="qlabel">🎧 Dictado: escribe lo que escuchas</div>${listenBox(spoken(text))}`,
+  return { kind: 'write', listen: spoken(text), prompt: `<div class="qlabel">🎧 ${t('q.dictation')}</div>${listenBox(spoken(text))}`,
     targets: [text], jpText: text, why: es ? `«${rich(es)}»` : '', hint: buildItem({ jp: text, es: es || '' }) };
 }
 // Oraciones de una lección aptas para dictado (cortas y con traducción)
@@ -135,16 +145,16 @@ function fromAuthored(s) {
     case 'mc': {
       const optsJp = s.opts.every(hasJp);
       const optHtml = o => s.kana ? `<span class="kana-opt" lang="ja">${esc(o)}</span>` : optsJp ? jp(o, { plain: true }) : rich(o);
-      return { kind: 'choice', prompt: `<div class="qlabel">${rich(s.q)}</div>${s.jp ? `<div class="qjp">${jp(s.jp, { cls: 'mid' })} ${audioBtn(s.jp)}</div>` : ''}`,
+      return { kind: 'choice', prompt: `<div class="qlabel">${s.qjp ? `<span title="${esc(s.q)}">${jp(s.qjp)}</span>` : qlab(s.q)}</div>${s.jp ? `<div class="qjp">${jp(s.jp, { cls: 'mid' })} ${audioBtn(s.jp)}</div>` : ''}`,
         say: s.jp ? spoken(s.jp) : null,
         opts: s.opts.map((o, i) => ({ key: i, html: optHtml(o), say: optsJp && !s.kana ? spoken(o) : null })), answer: s.a, why: rich(s.why), shuffle: s.shuffle !== false };
     }
     case 'listen':
-      return { kind: 'choice', listen: spoken(s.jp), prompt: `<div class="qlabel">${rich(s.q || 'Escucha y elige qué significa')}</div>${listenBox(spoken(s.jp))}`,
+      return { kind: 'choice', listen: spoken(s.jp), prompt: `<div class="qlabel">${qlab(s.q, 'q.listen')}</div>${listenBox(spoken(s.jp))}`,
         opts: s.opts.map((o, i) => ({ key: i, html: hasJp(o) ? jp(o, { plain: true }) : rich(o) })), answer: s.a,
         why: `${jp(s.jp)}${s.why ? '<br>' + rich(s.why) : ''}`, shuffle: true };
     case 'fill':
-      return { kind: 'choice', fill: s.jp, prompt: `<div class="qlabel">${rich(s.q || 'Completa la oración')}</div><div class="qjp fillq">${jp(s.jp, { cls: 'mid', blank: '<span class="blank" data-blank>　</span>' })}</div>${s.es ? `<div class="qes small">${rich(s.es)}</div>` : ''}`,
+      return { kind: 'choice', fill: s.jp, prompt: `<div class="qlabel">${qlab(s.q, 'q.fill')}</div><div class="qjp fillq">${jp(s.jp, { cls: 'mid', blank: '<span class="blank" data-blank>　</span>' })}</div>${s.es ? `<div class="qes small">${rich(s.es)}</div>` : ''}`,
         opts: s.opts.map((o, i) => ({ key: i, html: jp(o, { plain: true }), raw: o })), answer: s.a, why: rich(s.why), shuffle: true,
         after: spoken(s.jp.replace('＿', s.opts[s.a])) };
     case 'build':
@@ -157,6 +167,16 @@ function fromAuthored(s) {
       return qMatch(s.pairs.map(([a, b]) => [a, b, spoken(a)]));
     case 'type':
       return qTypeReading(s.jp, s.why ? rich(s.why) : null);
+    // Transformar: dada una forma, escribir otra (読む → 読みます)
+    case 'transform':
+      return { kind: 'write', prompt: `<div class="qlabel">✍️ ${qlab(s.q)}</div><div class="qjp">${jp(s.jp, { cls: 'big' })} ${audioBtn(s.jp)}</div>${s.es ? `<div class="qes small">${rich(s.es)}</div>` : ''}`,
+        targets: [s.a, ...(s.alt || [])], jpText: s.a, why: rich(s.why), after: spoken(s.a) };
+    case 'error':
+      return { kind: 'pick', jpText: s.jp, bad: s.bad, fix: s.fix, es: s.es, why: rich(s.why), after: spoken(s.fix) };
+    // Responder una pregunta en japonés con palabras propias; pat = estructura con la que debe terminar
+    case 'answer':
+      return { kind: 'write', prompt: `<div class="qlabel">💬 ${t('q.answer')}</div><div class="qjp">${jp(s.jp, { cls: 'mid' })} ${audioBtn(s.jp)}</div>`,
+        say: spoken(s.jp), pat: s.pat, targets: s.a, jpText: s.a[0], why: rich(s.why) };
   }
   return null;
 }
@@ -175,7 +195,12 @@ function buildLessonQueue(lesson) {
   let matched = false, builds = 0;
   const ratio = S.lessonDone(lesson.id) ? 1 : produceRatio(li);
   const dict = shuffle(sentencesOf(steps));
+  // Tramos: los marca el autor con { t: 'part' }; si no, empieza uno en cada explicación (sin dejar tramos de menos de 6 pasos)
+  const explicit = steps.some(s => s.t === 'part');
+  const parts = [];
   for (const s of steps) {
+    if (s.t === 'part') { parts.push({ at: q.length, title: s.title }); continue; }
+    if (!explicit && s.t === 'teach' && (!parts.length || q.length - parts.at(-1).at >= 6)) parts.push({ at: q.length, title: s.title });
     if (s.t === 'build' && ratio > 0) {
       builds++;
       q.push((builds % 4) / 4 < ratio || ratio === 1 ? qWrite(s) : buildItem(s));
@@ -244,6 +269,9 @@ function buildLessonQueue(lesson) {
     const it = fromAuthored(s);
     if (it) q.push(it);
   }
+  if (!parts.length || parts[0].at > 0) parts.unshift({ at: 0, title: lesson.title });
+  q.forEach((it, i) => { it.part = parts.findLastIndex(p => p.at <= i); });
+  q.parts = parts.map(p => p.title);
   return q;
 }
 
@@ -294,37 +322,72 @@ function buildReviewQueue(ids) {
   const big = pool.length >= 4 ? pool : [...pool, ...wordsUpTo(LESSONS.length - 1)];
   const gens = [qJpToEs, qEsToJp, qListenWord];
   const p = S.me();
-  return ids.map((id, i) => (p?.words[id]?.box >= 3 && i % 2 === 0 ? qWriteWord(ENTRIES[id], id) : gens[i % 3](ENTRIES[id], big, id)));
+  // Las alternativas se muestran solo después de pensar la respuesta, y se parecen a la correcta
+  return ids.flatMap((id, i) => [
+    ...(p?.words[id]?.fresh ? [{ kind: 'wordCard', e: ENTRIES[id] }] : []),
+    p?.words[id]?.box >= 3 && i % 2 === 0 ? qWriteWord(ENTRIES[id], id) : { ...gens[i % 3](ENTRIES[id], big, id, true), think: true }]);
 }
 
 // ───── Reproductor ─────
-export function play(root, { mode, lesson, unit, ids, onExit }) {
-  let queue, title;
-  if (mode === 'lesson') { queue = buildLessonQueue(lesson); title = lesson.title; }
-  else if (mode === 'test') { queue = buildTestQueue(unit); title = `Prueba: ${unit.title}`; }
-  else { queue = buildReviewQueue(ids); title = 'Repaso'; }
+// Huella del contenido: un avance guardado solo se retoma si la lección no cambió desde entonces
+const hash = s => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
+
+// Lo que se guarda al salir a mitad de camino: la cola (con sus elementos únicos) y los contadores
+const runId = (mode, lesson, unit) => mode === 'lesson' ? lesson.id : mode === 'test' ? 'test:' + unit.id : null;
+export const savedRun = (mode, lesson, unit) => {
+  const id = runId(mode, lesson, unit);
+  const r = id && S.loadRun(id);
+  return r && r.fp === fingerprint(mode, lesson, unit) ? r : null;
+};
+function fingerprint(mode, lesson, unit) {
+  return hash(JSON.stringify(mode === 'lesson' ? [STEPS[lesson.id], lesson.words, lesson.later] : unit.lessons.map(l => STEPS[l.id])));
+}
+
+export function play(root, { mode, lesson, unit, ids, onExit, fresh }) {
+  const rid = runId(mode, lesson, unit);
+  if (rid && fresh) S.clearRun(rid);
+  const saved = rid && !fresh ? savedRun(mode, lesson, unit) : null;
+  let queue;
+  if (saved) queue = saved.order.map(k => saved.items[k]);
+  else if (mode === 'lesson') queue = buildLessonQueue(lesson);
+  else if (mode === 'test') queue = buildTestQueue(unit);
+  else queue = buildReviewQueue(ids);
+  const parts = saved ? saved.parts : queue.parts || [];
 
   const MAX_MISTAKES = 3;
-  const st = { i: 0, combo: 0, best: 0, xp: 0, asked: new Set(), firstOk: 0, mistakes: 0, retried: new WeakSet() };
-  const totalQ = queue.filter(isQ).length;
+  const st = { i: 0, xp: 0, asked: new Set(), firstOk: 0, mistakes: 0, retried: new Set(), missed: [], totalQ: queue.filter(isQ).length };
+  if (saved) {
+    Object.assign(st, saved.st);
+    st.asked = new Set(saved.asked.map(k => saved.items[k]));
+    st.retried = new Set(saved.retried.map(k => saved.items[k]));
+  }
+  function persist() {
+    if (!rid) return;
+    const items = [...new Set(queue)], ix = new Map(items.map((x, k) => [x, k]));
+    const { asked, retried, ...rest } = st;
+    S.saveRun(rid, { fp: fingerprint(mode, lesson, unit), at: Date.now(), items, order: queue.map(x => ix.get(x)), parts,
+      asked: [...asked].map(x => ix.get(x)), retried: [...retried].map(x => ix.get(x)), st: rest });
+  }
+
   root.innerHTML = `
     <div class="player">
       <header class="ph">
         <button class="icon close" aria-label="Salir">✕</button>
         <div class="bar"><i></i></div>
-        <div class="combo" aria-live="polite"></div>
+        <div class="ptag" aria-live="polite"></div>
       </header>
       <main class="pbody" aria-live="polite"></main>
-      <footer class="pfoot"><div class="fb"></div><button class="btn primary next" disabled>Comprobar</button></footer>
+      <footer class="pfoot"><div class="fb"></div><button class="btn primary next" disabled></button></footer>
     </div>`;
   const body = $('.pbody', root), foot = $('.pfoot', root), btn = $('.next', root), fb = $('.fb', root);
-  $('.close', root).onclick = () => { if (st.i === 0 || confirm('¿Salir? Perderás el avance de esta lección.')) { cleanup(); onExit(); } };
+  // el avance de lecciones y pruebas queda guardado; el del repaso ya se registró pregunta a pregunta
+  $('.close', root).onclick = () => { cleanup(); onExit(); };
 
   let current = null; // { check(), ready }
   let phase = 'answer';
   const keyh = ev => {
     if (ev.target.tagName === 'INPUT' && ev.key !== 'Enter') return;
-    if (ev.key === 'Enter') { ev.preventDefault(); if (!btn.disabled) btn.click(); return; }
+    if (ev.key === 'Enter') { ev.preventDefault(); const r = $('.reveal', body); if (r) return r.click(); if (!btn.disabled) btn.click(); return; }
     if (/^[1-9]$/.test(ev.key) && phase === 'answer') { const o = $$('.opt', body)[+ev.key - 1]; if (o) o.click(); }
   };
   document.addEventListener('keydown', keyh);
@@ -335,24 +398,44 @@ export function play(root, { mode, lesson, unit, ids, onExit }) {
     if (slow) speak(slow.dataset.slow, 0.55);
   });
 
+  // La barra mide el tramo actual, no la lección entera
   function setProgress() {
-    $('.bar i', root).style.width = Math.round(100 * st.i / queue.length) + '%';
-    $('.combo', root).innerHTML = st.combo >= 3 ? `<span class="fire">🔥 ${st.combo}</span>` : '';
+    const p = queue[Math.min(st.i, queue.length - 1)]?.part;
+    const from = parts.length > 1 ? queue.findIndex(x => x.part === p) : 0;
+    const to = parts.length > 1 ? queue.findLastIndex(x => x.part === p) + 1 : queue.length;
+    $('.bar i', root).style.width = Math.round(100 * (st.i - from) / (to - from)) + '%';
+    $('.ptag', root).textContent = parts.length > 1 ? `Tramo ${p + 1}/${parts.length}` : '';
   }
 
   function next() {
     fb.innerHTML = ''; foot.className = 'pfoot';
     if (st.i >= queue.length) return finish();
+    persist();
     setProgress();
     const it = queue[st.i];
     phase = 'answer';
     body.classList.remove('enter'); void body.offsetWidth; body.classList.add('enter');
     current = RENDER[it.kind](it, body, ready => { btn.disabled = !ready; });
-    if (isQ(it)) { btn.textContent = 'Comprobar'; btn.disabled = true; if (it.kind === 'match') btn.classList.add('hide'); else btn.classList.remove('hide'); }
-    else { btn.textContent = current?.label || 'Continuar'; btn.disabled = false; btn.classList.remove('hide'); }
+    if (isQ(it)) { setBtn('check', 'p.check'); btn.disabled = true; if (it.kind === 'match') btn.classList.add('hide'); else btn.classList.remove('hide'); }
+    else { setBtn('next', current?.label || 'p.next'); btn.disabled = false; btn.classList.remove('hide'); }
     if (it.say && S.settings().sound !== false) setTimeout(() => speak(it.say, S.settings().rate), 250);
     if (it.listen) setTimeout(() => speak(it.listen, S.settings().rate), 300);
     const f = body.querySelector('input'); if (f) setTimeout(() => f.focus(), 50);
+  }
+
+  function setBtn(act, key) { btn.dataset.act = act; btn.innerHTML = t(key); }
+
+  // Pausa entre tramos: buen momento para dejarlo, el avance queda guardado
+  function partBreak() {
+    persist();
+    phase = 'break'; fb.innerHTML = ''; foot.className = 'pfoot';
+    const p = queue[st.i].part;
+    $('.bar i', root).style.width = '100%';
+    body.innerHTML = `<article class="card teach pbreak"><div class="kicker">✓ ${t('p.partDone')} · ${p}/${parts.length}</div>
+      <h2>${t('p.partNext')}: ${rich(parts[p])}</h2><p class="muted">Puedes seguir ahora o salir: retomarás aquí mismo.</p>
+      <button class="btn ghost pexit">${t('p.exit')}</button></article>`;
+    $('.pexit', body).onclick = () => { cleanup(); onExit(); };
+    setBtn('next', 'p.next'); btn.disabled = false; btn.classList.remove('hide');
   }
 
   function grade(ok, correctHtml, it, note) {
@@ -360,30 +443,36 @@ export function play(root, { mode, lesson, unit, ids, onExit }) {
     const first = !st.asked.has(it);
     st.asked.add(it);
     if (ok) {
-      st.combo++; st.best = Math.max(st.best, st.combo);
       if (first) st.firstOk++;
-      const gain = it.hinted ? 5 : first ? (st.combo >= 5 ? 15 : 10) : 5;
-      st.xp += gain;
+      st.xp += it.hinted || !first ? 5 : 10;
       sfx('ok');
     } else {
-      st.combo = 0; st.mistakes++;
+      st.mistakes++;
       sfx('bad');
-      if (mode !== 'test' && !st.retried.has(it)) { st.retried.add(it); queue.push(it); }
+      if (first && (correctHtml || it.why) && st.missed.length < 8) st.missed.push({ c: correctHtml || '', w: it.why || '' });
+      // el error vuelve al final del tramo actual, no de la lección
+      if (mode !== 'test' && !st.retried.has(it)) {
+        st.retried.add(it);
+        let j = queue.length;
+        while (j > st.i + 1 && queue[j - 1].part !== it.part) j--;
+        queue.splice(j, 0, it);
+      }
     }
     if (it.srs && first) S.gradeWord(it.srs, ok);
-    const praise = ['¡Bien!', '¡Excelente!', '¡Correcto!', '¡Eso es!', 'すごい！', 'いいね！'];
     foot.className = 'pfoot ' + (ok ? 'ok' : 'bad');
-    fb.innerHTML = `<div class="fb-t">${ok ? '✓ ' + praise[Math.floor(Math.random() * praise.length)] : '✗ No exactamente'}</div>
+    fb.innerHTML = `<div class="fb-t">${ok ? '✓ ' + t('p.ok') : '✗ ' + t('p.bad')}</div>
       ${!ok && correctHtml ? `<div class="fb-a">Respuesta correcta: ${correctHtml}</div>` : ''}
       ${note ? `<div class="fb-n">${note}</div>` : ''}
       ${it.why ? `<div class="fb-w">${it.why}</div>` : ''}`;
-    btn.textContent = 'Continuar'; btn.disabled = false; btn.classList.remove('hide');
+    setBtn('next', 'p.next'); btn.disabled = false; btn.classList.remove('hide');
     if (it.after && S.settings().sound !== false) speak(it.after, S.settings().rate);
     setProgress();
-    if (mode === 'test' && st.mistakes > MAX_MISTAKES) { btn.textContent = 'Ver resultado'; st.failed = true; }
+    persist();
+    if (mode === 'test' && st.mistakes > MAX_MISTAKES) { btn.dataset.act = 'next'; btn.textContent = 'Ver resultado'; st.failed = true; }
   }
 
   btn.onclick = () => {
+    if (phase === 'break') return next();
     const it = queue[st.i];
     if (phase === 'answer' && isQ(it) && current?.check) {
       const r = current.check();
@@ -392,37 +481,44 @@ export function play(root, { mode, lesson, unit, ids, onExit }) {
     }
     if (current?.advance && current.advance()) return; // p. ej. diálogo que revela líneas
     if (st.failed) return finish();
-    st.i++; next();
+    st.i++;
+    if (parts.length > 1 && queue[st.i] && queue[st.i].part !== it.part) return partBreak();
+    next();
   };
   // los ejercicios de unir pares se autocompletan
   body.addEventListener('match-done', ev => grade(ev.detail.ok, '', queue[st.i]));
 
   function finish() {
     cleanup();
-    const acc = totalQ ? Math.round(100 * st.firstOk / totalQ) : 100;
+    if (rid) S.clearRun(rid);
+    const acc = st.totalQ ? Math.round(100 * st.firstOk / st.totalQ) : 100;
+    const missed = st.missed.length ? `<div class="recap"><h3>${t('p.toReview')}</h3><ul>${st.missed.map(m => `<li>${m.c ? `<div>${m.c}</div>` : ''}${m.w ? `<div class="muted small">${m.w}</div>` : ''}</li>`).join('')}</ul></div>` : '';
     let html;
     if (mode === 'test') {
       const passed = !st.failed && st.mistakes <= MAX_MISTAKES;
-      if (passed) { S.passUnitTest(unit.id, acc); S.addXP(st.xp + 30); confetti(); sfx('done'); }
+      if (passed) { S.passUnitTest(unit.id, acc); S.addXP(st.xp + 30); sfx('done'); }
       html = passed
-        ? `<div class="done"><div class="done-ic">🏆</div><h2>¡Prueba superada!</h2><p>Marcamos como completadas <b>${esc(unit.title)}</b> y las unidades anteriores. Sus palabras pasan a tu repaso.</p>`
-        : `<div class="done"><div class="done-ic">💪</div><h2>Casi…</h2><p>Tuviste más de ${MAX_MISTAKES} errores. Te recomendamos hacer las lecciones de esta unidad: ¡van rápido si ya sabes algo!</p>`;
+        ? `<div class="done"><h2>Prueba superada</h2><p>Marcamos como completadas <b>${esc(unit.title)}</b> y las unidades anteriores. Sus palabras pasan a tu repaso.</p>`
+        : `<div class="done"><h2>Todavía no</h2><p>Tuviste más de ${MAX_MISTAKES} errores. Te conviene hacer las lecciones de esta unidad: van rápido si ya sabes algo.</p>${missed}`;
     } else if (mode === 'lesson') {
       const already = S.lessonDone(lesson.id);
       S.completeLesson(lesson.id, acc);
-      const bonus = 20 + (acc === 100 ? 10 : 0);
-      S.addXP(st.xp + bonus); confetti(); sfx('done');
+      S.addXP(st.xp + 20); sfx('done');
       const ws = entriesOf(lesson);
-      html = `<div class="done"><div class="done-ic">${acc >= 90 ? '🌸' : acc >= 70 ? '⭐' : '👍'}</div><h2>${already ? '¡Lección repasada!' : '¡Lección completada!'}</h2>
-        <div class="stats"><div><b>+${st.xp + bonus}</b><span>XP</span></div><div><b>${acc}%</b><span>precisión</span></div><div><b>${st.best}</b><span>mejor racha</span></div></div>
-        ${ws.length ? `<h3>Palabras aprendidas (${ws.length})</h3><div class="wordchips">${ws.map(e => jp(e.w === e.r || /[゠-ヿ]/.test(e.w) ? e.r : e.w)).join('')}</div><p class="muted small">Entran a tu repaso espaciado: volverán justo antes de que las olvides.</p>` : ''}`;
+      const reads = READINGS.filter(r => r.after === lesson.id && !S.me()?.readings[r.id]);
+      html = `<div class="done"><h2>${already ? 'Lección repasada' : 'Lección completada'}</h2>
+        <p class="muted">${acc}% a la primera · +${st.xp + 20} XP</p>
+        <div class="recap"><h3>${t('p.canNow')}</h3>${lesson.goal ? `<p>${rich(lesson.goal)}</p>` : ''}${lesson.grammar?.length ? `<ul class="gram">${lesson.grammar.map(g => `<li>${rich(g)}</li>`).join('')}</ul>` : ''}</div>
+        ${missed}
+        ${ws.length ? `<h3>Palabras nuevas (${ws.length})</h3><div class="wordchips">${ws.map(e => jp(e.w === e.r || /[゠-ヿ]/.test(e.w) ? e.r : e.w)).join('')}</div><p class="muted small">Entran a tu repaso espaciado.</p>` : ''}
+        ${reads.map(r => `<a class="callout link rrec" href="#/lectura/${r.id}">📖 <b>${t('p.reading')}:</b> <span lang="ja">${jp(r.title, { plain: true })}</span> · ${esc(r.es)}</a>`).join('')}`;
     } else {
       S.addXP(st.xp); sfx('done');
-      html = `<div class="done"><div class="done-ic">🧠</div><h2>¡Repaso terminado!</h2>
-        <div class="stats"><div><b>+${st.xp}</b><span>XP</span></div><div><b>${acc}%</b><span>de memoria</span></div></div>
-        <p class="muted">Las que fallaste volverán pronto; las que acertaste, en unos días.</p>`;
+      html = `<div class="done"><h2>Repaso terminado</h2>
+        <p class="muted">${acc}% de memoria · +${st.xp} XP</p>
+        <p class="muted">Las que fallaste volverán pronto; las que acertaste, en unos días.</p>${missed}`;
     }
-    root.innerHTML = `<div class="player"><main class="pbody enter">${html}<button class="btn primary wide fin">Continuar</button></div></main></div>`;
+    root.innerHTML = `<div class="player"><main class="pbody enter">${html}<button class="btn primary wide fin">${t('p.next')}</button></div></main></div>`;
     $('.fin', root).onclick = onExit;
     $('.fin', root).focus();
   }
@@ -434,7 +530,7 @@ export function play(root, { mode, lesson, unit, ids, onExit }) {
   next();
 }
 
-const isQ = it => ['choice', 'build', 'match', 'type', 'write'].includes(it.kind);
+const isQ = it => ['choice', 'build', 'match', 'type', 'write', 'pick'].includes(it.kind);
 
 // ───── Renderizadores ─────
 const RENDER = {
@@ -473,9 +569,9 @@ const RENDER = {
     $('.tr-all', body).onclick = () => $$('.tr', box).forEach(t => t.classList.remove('hidden'));
     $('.play-all', body).onclick = async () => { for (const l of s.lines.slice(0, shown)) await speak(spoken(l[1]), S.settings().rate, voiceOf(l[0])); };
     const api = {
-      label: s.lines.length > 1 ? 'Siguiente ▸' : 'Continuar',
+      label: s.lines.length > 1 ? 'p.nextLine' : 'p.next',
       advance() {
-        if (shown < s.lines.length) { addLine(); if (shown === s.lines.length) document.querySelector('.next').textContent = 'Continuar'; return true; }
+        if (shown < s.lines.length) { addLine(); if (shown === s.lines.length) document.querySelector('.next').innerHTML = t('p.next'); return true; }
         return false;
       },
     };
@@ -503,6 +599,7 @@ const RENDER = {
       <div class="word-ro">${esc(romajiOf(e))}</div>
       <div class="word-es">${esc(e.es)}</div>
       <div class="muted small">${esc(POS[e.pos] || '')}</div>
+      ${masuForm(e) ? `<div class="vforms"><span lang="ja">${esc(e.w)}</span> → ${jp(`${masuForm(e)}=${e.id}`, { plain: true })} <small class="muted">(forma ます)</small></div>` : ''}
       ${e.note ? `<div class="tip">💡 ${rich(e.note)}</div>` : ''}
       ${!kanaOnly || e.w === e.r ? '' : ''}
       ${kanaOnly && e.w !== e.r && !/[゠-ヿ]/.test(e.w) ? `<p class="muted small">Con kanji se escribe <span lang="ja">${esc(e.w)}</span> (lo verás más adelante).</p>` : ''}
@@ -522,6 +619,15 @@ const RENDER = {
   },
 
   choice(it, body, setReady) {
+    // Repaso: primero pensar la respuesta, después ver las alternativas
+    if (it.think) {
+      let inner = null;
+      body.innerHTML = `<div class="q">${it.prompt}</div><div class="think"><p class="muted">Piensa la respuesta antes de ver las alternativas.</p><button class="btn primary reveal">${t('p.reveal')}</button></div>`;
+      const r = $('.reveal', body);
+      r.onclick = () => { inner = RENDER.choice({ ...it, think: false }, body, setReady); };
+      setTimeout(() => r.focus(), 60);
+      return { check: () => inner.check() };
+    }
     const opts = it.shuffle === false ? it.opts : (it.shuffle ? shuffle(it.opts) : it.opts);
     body.innerHTML = `<div class="q">${it.prompt}</div><div class="opts ${opts.some(o => /kana-opt/.test(o.html)) ? 'grid4' : ''}">${opts.map((o, i) => `<button class="opt" data-k="${esc(o.key)}"><span class="num">${i + 1}</span><span class="ot">${o.html}</span></button>`).join('')}</div>`;
     let sel = null;
@@ -546,7 +652,7 @@ const RENDER = {
   },
 
   build(it, body, setReady) {
-    body.innerHTML = `<div class="q"><div class="qlabel">Traduce al japonés</div><div class="qes">«${rich(it.es)}»</div></div>
+    body.innerHTML = `<div class="q"><div class="qlabel">${t('q.build')}</div><div class="qes">«${rich(it.es)}»</div></div>
       <div class="answer-line" aria-label="Tu respuesta"></div><div class="tiles"></div>`;
     const line = $('.answer-line', body), bank = $('.tiles', body);
     const make = t => {
@@ -630,12 +736,33 @@ const RENDER = {
     return {
       check() {
         if (inner) return inner.check();
-        const r = checkAnswer(inp.value, it.targets);
+        // Respuesta libre: basta con que termine en la estructura pedida y tenga algo antes
+        const r = it.pat ? (() => { const k = looseKana(toKanaInput(inp.value)); return [].concat(it.pat).some(pt => [...answerForms(pt)].some(f => k.endsWith(f))) && 'exact'; })()
+          : checkAnswer(inp.value, it.targets);
         inp.disabled = true; inp.classList.add(r ? 'good' : 'badl');
         const reading = textReading(tokenize(it.jpText));
         const correct = `${jp(it.jpText)}${/[\u4e00-\u9faf]/.test(it.jpText) ? ` <span class="muted" lang="ja">(${esc(reading)})</span>` : ''}`;
         return { ok: !!r, correct,
           note: r === 'close' ? `Casi perfecto: revisa las vocales largas. Se escribe ${correct}.` : r === 'exact' && /[a-z]/i.test(inp.value) ? `En japonés: <span lang="ja">${esc(toKanaInput(inp.value.trim()))}</span>` : '' };
+      },
+    };
+  },
+  // Encontrar el error: tocar la palabra que está mal
+  pick(it, body, setReady) {
+    const toks = tokenize(it.jpText);
+    body.innerHTML = `<div class="q"><div class="qlabel">🔎 ${t('q.error')}</div>${it.es ? `<div class="qes small">«${rich(it.es)}»</div>` : ''}</div>
+      <div class="err-line">${toks.map((t, k) => t.punct ? `<span lang="ja">${esc(t.surface)}</span>` : `<button class="tile etok" data-k="${k}">${jp(t.raw, { plain: true })}</button>`).join('')}</div>`;
+    let sel = null;
+    $$('.etok', body).forEach(b => b.onclick = () => {
+      if (b.disabled) return;
+      $$('.etok', body).forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel'); sel = +b.dataset.k; sfx('tap'); setReady(true);
+    });
+    return {
+      check() {
+        const ok = toks[sel]?.surface === it.bad;
+        $$('.etok', body).forEach(b => { b.disabled = true; if (toks[+b.dataset.k].surface === it.bad) b.classList.add('right'); else if (b.classList.contains('sel')) b.classList.add('wrong'); });
+        return { ok, correct: jp(it.fix) };
       },
     };
   },
