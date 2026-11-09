@@ -228,6 +228,7 @@ function viewProfile() {
       <label>Romaji en el diccionario<select data-set="romaji">${opt('romaji', true, 'Mostrar')}${opt('romaji', false, 'Ocultar')}</select></label>
       <label>Sonido y voz<select data-set="sound">${opt('sound', true, 'Activado')}${opt('sound', false, 'Desactivado')}</select></label>
       <label>Velocidad de la voz<select data-set="rate">${opt('rate', 0.65, 'Lenta')}${opt('rate', 0.85, 'Normal')}${opt('rate', 1, 'Natural')}</select></label>
+      <label>Tiempo límite al elegir en el repaso<select data-set="timer">${opt('timer', true, 'Sí (4 s; 6 s si las opciones están en japonés)')}${opt('timer', false, 'No')}</select></label>
       <label>Meta diaria<select data-set="goal">${opt('goal', 30, '30 XP · relajada')}${opt('goal', 50, '50 XP · normal')}${opt('goal', 100, '100 XP · intensa')}</select></label>
       <label>Interfaz en japonés<select data-set="uiJp">${opt('uiJp', true, 'A medida que aprendo las palabras')}${opt('uiJp', false, 'Siempre en español')}</select></label>
       <label>Desbloquear todo el camino<select data-set="unlockAll">${opt('unlockAll', false, 'No (en orden)')}${opt('unlockAll', true, 'Sí (elegir libremente)')}</select></label>

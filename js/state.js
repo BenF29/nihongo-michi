@@ -17,7 +17,7 @@ function defaults(name, avatar) {
     name, avatar: avatar || '🦊', created: Date.now(),
     xp: 0, streak: { n: 0, last: null }, days: {},
     lessons: {}, tests: {}, words: {}, kana: {}, kanji: {}, readings: {}, exams: [], examSeen: {},
-    settings: { furigana: 'auto', spacing: true, romaji: true, rate: 0.85, sound: true, goal: 50, unlockAll: false, readMode: 'read', uiJp: true },
+    settings: { furigana: 'auto', spacing: true, romaji: true, rate: 0.85, sound: true, goal: 50, unlockAll: false, readMode: 'read', uiJp: true, timer: true },
   };
 }
 

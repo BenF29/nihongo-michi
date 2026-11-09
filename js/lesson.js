@@ -325,7 +325,8 @@ function buildReviewQueue(ids) {
   // Las alternativas se muestran solo después de pensar la respuesta, y se parecen a la correcta
   return ids.flatMap((id, i) => [
     ...(p?.words[id]?.fresh ? [{ kind: 'wordCard', e: ENTRIES[id] }] : []),
-    p?.words[id]?.box >= 3 && i % 2 === 0 ? qWriteWord(ENTRIES[id], id) : { ...gens[i % 3](ENTRIES[id], big, id, true), think: true }]);
+    // segundos para elegir una vez vistas las alternativas: leer cuatro opciones en kana toma más que en español
+    p?.words[id]?.box >= 3 && i % 2 === 0 ? qWriteWord(ENTRIES[id], id) : { ...gens[i % 3](ENTRIES[id], big, id, true), think: true, secs: gens[i % 3] === qEsToJp ? 6 : 4 }]);
 }
 
 // ───── Reproductor ─────
@@ -487,6 +488,8 @@ export function play(root, { mode, lesson, unit, ids, onExit, fresh }) {
   };
   // los ejercicios de unir pares se autocompletan
   body.addEventListener('match-done', ev => grade(ev.detail.ok, '', queue[st.i]));
+  // si saliste del repaso antes de que venciera el tiempo, no se califica
+  body.addEventListener('timed-done', () => { if (phase === 'answer' && body.isConnected) btn.onclick(); });
 
   function finish() {
     cleanup();
@@ -624,7 +627,15 @@ const RENDER = {
       let inner = null;
       body.innerHTML = `<div class="q">${it.prompt}</div><div class="think"><p class="muted">Piensa la respuesta antes de ver las alternativas.</p><button class="btn primary reveal">${t('p.reveal')}</button></div>`;
       const r = $('.reveal', body);
-      r.onclick = () => { inner = RENDER.choice({ ...it, think: false }, body, setReady); };
+      r.onclick = () => {
+        inner = RENDER.choice({ ...it, think: false }, body, setReady);
+        if (!it.secs || S.settings().timer === false) return;
+        // con tiempo límite, elegir ya es responder; si se acaba, se corrige lo que haya (nada = error)
+        body.insertAdjacentHTML('beforeend', `<div class="tbar" style="--secs:${it.secs}s"><i></i></div>`);
+        const done = () => { clearTimeout(tm); body.dispatchEvent(new Event('timed-done')); };
+        const tm = setTimeout(done, it.secs * 1000);
+        $$('.opt', body).forEach(b => b.addEventListener('click', done));
+      };
       setTimeout(() => r.focus(), 60);
       return { check: () => inner.check() };
     }

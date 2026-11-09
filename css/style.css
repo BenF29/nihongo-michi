@@ -474,6 +474,11 @@ body[data-view="leccion"], body[data-view="prueba"], body[data-view="repasar"] {
 /* ── Tramos, repaso con alternativas ocultas, encontrar el error, resumen final ── */
 .pbreak { text-align: center; }
 .think { text-align: center; padding: 1.4rem 0; }
+.tbar { height: 4px; margin-top: 1rem; border-radius: 2px; background: var(--line); overflow: hidden; }
+.tbar i { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: tbar var(--secs) linear forwards; }
+@keyframes tbar { to { transform: scaleX(0); } }
+/* la barra informa cuánto tiempo queda, no es adorno: se mantiene con movimiento reducido */
+@media (prefers-reduced-motion: reduce) { .tbar i { animation: tbar var(--secs) linear forwards !important; } }
 .err-line { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: center; align-items: center; margin: 1rem 0; font-size: 1.25rem; }
 .etok.sel { border-color: var(--accent); background: var(--accent-soft); }
 .etok.right { border-color: var(--ok); background: var(--ok-soft); } .etok.wrong { border-color: var(--bad); background: var(--bad-soft); }
