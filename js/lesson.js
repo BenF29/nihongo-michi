@@ -67,7 +67,8 @@ function qEsToJp(e, pool, srs, similar) {
     why: `«${esc(e.es)}» = <span lang="ja">${esc(e.w)}</span>${e.w !== e.r ? ` (${esc(e.r)})` : ''}`, after: sayWord(e) };
 }
 function qListenWord(e, pool, srs, similar) {
-  const ds = distractors(e, pool, 3, 'es', similar);
+  // solo se escucha: excluir homófonos (語／五, 花／鼻), que suenan idéntico y harían la pregunta ambigua
+  const ds = distractors(e, pool.filter(x => toHira(x.r) !== toHira(e.r)), 3, 'es', similar);
   return { kind: 'choice', srs, listen: sayWord(e), prompt: `<div class="qlabel">${t('q.listenMeaning')}</div>${listenBox(sayWord(e))}`,
     opts: shuffle([e, ...ds]).map(x => ({ key: x.id, html: esc(x.es) })), answer: e.id,
     why: `Era <span lang="ja">${esc(e.w)}</span> (${esc(e.r)}) = <b>${esc(e.es)}</b>` };
