@@ -15,6 +15,7 @@ Aplicación web interactiva para aprender japonés desde cero, en español.
   - **⏩ Ya lo sé**: una prueba corta por unidad para saltar lo que ya sabes.
 - **Simulacro JLPT N5**: examen completo con las tres secciones reales (文字・語彙 20 min, 文法・読解 40 min, 聴解), los mismos tipos de problema (もんだい 1–6 y los cuatro del 聴解), sin furigana en los kanji del N5 y con el audio sonando una sola vez. Al final da un puntaje estimado en la escala del JLPT (aprobado: 80/180), el detalle por tipo de problema y qué lecciones repasar. También se puede hacer una sola sección o practicar cada tipo de problema con corrección inmediata.
 - **Lecturas graduadas**: 27 textos originales en 6 niveles, que se pueden leer o hacer en modo **🎧 Escuchar primero** (texto oculto, reproductor por oraciones), con preguntas de comprensión (opción múltiple, verdadero/falso y respuesta escrita en japonés o romaji). El feedback resalta la oración del texto donde está la respuesta. Cada lectura muestra qué porcentaje de sus palabras ya conoces.
+- **Clips**: más de 100 frases cortas de anime, series y japonés real en videos de YouTube (se reproduce solo el tramo de la frase). Escuchas, respondes y recién después ves el texto clicable, tomado de los subtítulos en japonés del propio video.
 - **Diccionario clicable**: toca cualquier palabra japonesa para ver su significado, lectura, romaji, forma gramatical (p. ej. 食べました ← 食べる, pasado cortés) y los kanji que la componen. La furigana aparece solo sobre los kanji que todavía no aprendes.
 - **Repaso espaciado** (sistema Leitner: 1, 3, 7, 16, 35… días), tabla de kana, lista de kanji y vocabulario aprendido.
 - **Perfiles**: varios usuarios por navegador, cada uno con su progreso, XP, racha diaria y meta. El progreso se guarda en `localStorage` y se puede exportar e importar con un código para cambiar de dispositivo.
@@ -38,6 +39,7 @@ Es un sitio estático, sin dependencias ni paso de compilación (HTML, CSS y mó
 python3 -m http.server 8000   # luego abre http://localhost:8000
 node tools/validate.mjs       # valida el contenido (añade -w para ver advertencias)
 node tools/n5-coverage.mjs    # qué kanji y palabras del N5 enseña el camino
+node tools/check-clips.mjs    # ¿siguen en YouTube los videos de los clips?
 ```
 
 El contenido vive en `js/data/`:
@@ -50,6 +52,7 @@ El contenido vive en `js/data/`:
 | `kanji_alt.js` | escrituras con kanji que el corrector también acepta (面白い por おもしろい) |
 | `lessons/uN.js` | los pasos de cada lección |
 | `readings.js` | lecturas y preguntas |
+| `clips.js` | clips de anime: video, tramo, texto y preguntas |
 | `exam/` | banco de preguntas del simulacro N5 |
 
 El formato está documentado en [`docs/FORMATO.md`](docs/FORMATO.md). El validador comprueba que cada palabra exista en el diccionario, que cada lección use solo vocabulario y kana ya enseñados, y calcula la cobertura de vocabulario de cada lectura.

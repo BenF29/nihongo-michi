@@ -8,6 +8,7 @@ import * as S from './state.js';
 import { play, savedRun } from './lesson.js';
 import READINGS from './data/readings.js';
 import { renderList, renderReading } from './reader.js';
+import { renderClipList, renderClip } from './clips.js';
 import { renderExamHome, playExam } from './exam.js';
 import { ttsAvailable, hasJapaneseVoice } from './tts.js';
 import { esc, $, $$, jp, rich, toast, POS, closePop, WORD_LESSON } from './ui.js';
@@ -21,7 +22,7 @@ function shell(active, inner) {
   const due = S.dueWords().length;
   const goal = S.settings().goal, today = S.xpToday();
   const pct = Math.min(100, Math.round(100 * today / goal));
-  const nav = [['camino', '道'], ['lecturas', '読'], ['repaso', '復'], ['palabras', '辞'], ['examen', '試']];
+  const nav = [['camino', '道'], ['lecturas', '読'], ['clips', '映'], ['repaso', '復'], ['palabras', '辞'], ['examen', '試']];
   return `<header class="top">
       <a class="logo" href="#/camino"><span lang="ja">道</span> Michi</a>
       <nav class="nav">${nav.map(([k, ic]) => `<a href="#/${k}" class="${active === k ? 'on' : ''}"><span class="nic" lang="ja">${ic}</span><span class="nt">${t('nav.' + k)}</span>${k === 'repaso' && due ? `<span class="badge">${due}</span>` : ''}</a>`).join('')}</nav>
@@ -210,7 +211,7 @@ function viewWords(tab = 'vocab') {
 function viewProfile() {
   const p = S.me(), st = S.settings();
   const lessons = Object.values(p.lessons).filter(l => l.done).length;
-  const reads = Object.keys(p.readings).length;
+  const reads = Object.keys(p.readings).filter(id => id[0] === 'r').length;   // sin los clips (ids «c…»)
   const days = Object.keys(p.days).sort().slice(-28);
   const opt = (k, v, t) => `<option value="${v}" ${String(st[k]) === String(v) ? 'selected' : ''}>${t}</option>`;
   app.innerHTML = shell('perfil', `<section class="page">
@@ -331,6 +332,8 @@ function route() {
     }
     case 'lecturas': app.innerHTML = shell('lecturas', '<div id="rl"></div>'); return renderList($('#rl'));
     case 'lectura': app.innerHTML = shell('lecturas', '<div id="rd"></div>'); return renderReading($('#rd'), arg);
+    case 'clips': app.innerHTML = shell('clips', '<div id="cl"></div>'); return renderClipList($('#cl'));
+    case 'clip': app.innerHTML = shell('clips', '<div id="cl"></div>'); return renderClip($('#cl'), arg);
     case 'examen': app.innerHTML = shell('examen', '<div id="ex"></div>'); return renderExamHome($('#ex'));
     case 'simulacro': case 'practica': {
       const mode = view === 'practica' ? 'practice' : arg === 'completo' ? 'full' : 'section';

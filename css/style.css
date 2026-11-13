@@ -385,6 +385,11 @@ body[data-view="leccion"], body[data-view="prueba"], body[data-view="repasar"] {
 .lp-prog { display: flex; align-items: center; gap: .8rem; font-size: .85rem; color: var(--muted); font-weight: 700; }
 .lp-prog .meter { max-width: 220px; height: 7px; }
 .text { position: relative; }
+/* Clips */
+.clip-video { aspect-ratio: 16 / 9; background: #000; border-radius: var(--r); overflow: hidden; margin: .8rem 0; }
+.clip-video iframe { width: 100%; height: 100%; display: block; }
+.clip-video .callout { margin: 1rem; }
+.clip-note { font-family: var(--font); font-size: .95rem; color: var(--ink2); line-height: 1.6; border-top: 1px solid var(--line); padding-top: .8rem; }
 .text.veiled > p { filter: blur(9px); user-select: none; pointer-events: none; }
 .veil { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3rem; text-align: center; font-size: 1rem; color: var(--ink2); font-weight: 700; }
 .veil p { margin: 0; }

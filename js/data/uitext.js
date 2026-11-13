@@ -8,6 +8,7 @@ export const UI = {
   // navegación
   'nav.camino': { es: 'Camino', jp: '道' },
   'nav.lecturas': { es: 'Lecturas', jp: '読む' },
+  'nav.clips': { es: 'Clips', jp: '見る' },
   'nav.repaso': { es: 'Repaso', jp: '練習' },
   'nav.palabras': { es: 'Palabras', jp: 'ことば' },
   'nav.examen': { es: 'Examen', jp: 'テスト' },

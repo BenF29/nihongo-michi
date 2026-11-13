@@ -12,6 +12,7 @@ import { KANJI } from '../js/data/kanji.js';
 import { KANA } from '../js/data/kana.js';
 import { STEPS } from '../js/data/lessons/index.js';
 import READINGS from '../js/data/readings.js';
+import CLIPS from '../js/data/clips.js';
 import { BANK } from '../js/data/exam/index.js';
 import { UI, unlockIndex } from '../js/data/uitext.js';
 
@@ -159,11 +160,18 @@ const knownAt = {};
 }
 const cov = [];
 const ids = new Set();
-for (const r of READINGS.length ? READINGS : []) {
-  const where = `lectura ${r.id}`;
+for (const r of [...READINGS, ...CLIPS]) {
+  const clip = CLIPS.includes(r);
+  const where = `${clip ? 'clip' : 'lectura'} ${r.id}`;
   if (ids.has(r.id)) err(where, 'id duplicado'); ids.add(r.id);
   if (!r.paras || !r.questions) { err(where, 'faltan paras o questions'); continue; }
   if (r.after && !(r.after in LESSON_INDEX)) err(where, `after desconocido: ${r.after}`);
+  if (clip) {
+    if (!/^[\w-]{11}$/.test(r.yt || '')) err(where, `yt no es un id de video de YouTube: ${r.yt}`);
+    if (!(r.from >= 0 && r.from < r.to)) err(where, 'from y to deben ser segundos, con from < to');
+    if (!r.after || !r.src || !r.es) err(where, 'faltan after, src o es');
+    if (r.questions.some(q => q.t !== 'mc')) err(where, 'los clips solo admiten preguntas mc');
+  }
   const kset = knownAt[r.after] || new Set();
   let total = 0, ok = 0; const unknown = new Set();
   const sentences = r.paras.flat();
@@ -277,14 +285,14 @@ for (const [type, items] of Object.entries(BANK)) {
 
 if (process.argv.includes('--coverage') || cov.length) {
   console.log('\nCobertura de lecturas (palabras conocidas al terminar `after`):');
-  for (const [id, lv, after, pct, n, unk] of cov) console.log(`  ${id} N${lv} tras ${after}: ${pct}% de ${n} palabras${unk ? `  · nuevas: ${unk}` : ''}`);
+  for (const [id, lv, after, pct, n, unk] of cov) console.log(`  ${id} ${lv ? 'N' + lv : 'clip'} tras ${after}: ${pct}% de ${n} palabras${unk ? `  · nuevas: ${unk}` : ''}`);
 }
 // las `later` se aprenden en el repaso: no hace falta que aparezcan en las lecciones
 const laterIds = new Set(LESSONS.flatMap(l => (l.later || []).map(w => lookup(w)?.id)));
 const unused = Object.keys(introducedIn).filter(id => !wordUses[id] && ENTRIES[id].pos !== 'name' && !laterIds.has(id));
 if (unused.length) warn('vocab', `palabras introducidas que no aparecen en ningún texto de lección: ${unused.join(' ')}`);
 
-console.log(`\nLecciones con pasos: ${LESSONS.filter(l => STEPS[l.id]).length}/${LESSONS.length} · Lecturas: ${cov.length} · Palabras: ${Object.keys(ENTRIES).length} · Preguntas de examen: ${examN}`);
+console.log(`\nLecciones con pasos: ${LESSONS.filter(l => STEPS[l.id]).length}/${LESSONS.length} · Lecturas: ${READINGS.length} · Clips: ${CLIPS.length} · Palabras: ${Object.keys(ENTRIES).length} · Preguntas de examen: ${examN}`);
 // ── Textos de la interfaz: todos deben poder pasar a japonés ──
 const uiAt = Object.entries(UI).map(([k, u]) => [k, u, unlockIndex(u.jp)]);
 for (const [k, u, at] of uiAt) if (at < 0) err('interfaz', `${k}: «${u.jp}» usa palabras que no están en el camino`);

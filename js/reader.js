@@ -225,7 +225,7 @@ export function renderReading(root, id) {
   }
 }
 
-function qHTML(q, i) {
+export function qHTML(q, i) {
   const head = `<div class="rq-q"><span class="qn">${i + 1}</span><div>${q.qjp ? `<div>${jp(q.qjp)}</div>` : ''}<div class="${q.qjp ? 'muted' : ''}">${rich(q.q)}</div></div></div>`;
   let body = '';
   if (q.t === 'mc') body = `<div class="ropts">${q.opts.map((o, k) => `<button class="ro" data-v="${k}">${/[぀-ヿ一-龯]/.test(o) ? jp(o) : rich(o)}</button>`).join('')}</div>`;

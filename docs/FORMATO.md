@@ -168,6 +168,34 @@ export default [
 - `qjp` (opcional): la pregunta en japonés tokenizado (para niveles 3–5), además de `q` en español.
 - Palabras que no están en `vocab.js` van a `vocab_extra.js`.
 
+## Clips (`js/data/clips.js`)
+
+Frases cortas (5–20 s) de anime o de japonés real que se reproducen desde un video de YouTube incrustado. Un clip tiene la forma de una lectura más el video:
+
+```js
+{ id: 'c01', yt: '-dUOzVp6-Y0', from: 603.3, to: 617.9, src: 'ワンパンマン #01', after: 'u8l1',
+  es: 'En la caja del supermercado',
+  paras: [[ ['四百八十二|よんひゃくはちじゅうに=百 円 です 。', 'Son 482 yenes.'], /* … */ ]],
+  questions: [{ t: 'mc', q: '¿Cuánto cuesta la compra?', opts: ['428 yenes', '482 yenes', '382 yenes'], a: 1, why: '…' }],
+  note: 'opcional: lo casual o lo que el camino aún no enseña (admite {japonés} y **negrita**)' }
+```
+
+- `yt`: id del video. `from` / `to`: segundos (con decimales) del tramo que suena. `src`: serie y episodio.
+- Solo videos que tengan **subtítulos en japonés hechos a mano** (no los generados automáticamente): el texto y los tiempos salen de ahí, no del oído de nadie. De preferencia, del canal oficial de la serie.
+- Solo videos con **una sola pista de audio**. Muchos clips de Netflix Anime traen doblajes: el reproductor incrustado elige la pista según el idioma del navegador (inglés, español…) y no permite cambiarla, así que el clip sonaría doblado. `tools/check-clips.mjs` lo detecta.
+- `from` = inicio de la primera línea − 0,3 s; `to` = fin de la última línea + 0,3 s (sin pisar la línea anterior ni la siguiente), con un mínimo de unos 2 s.
+- `questions`: solo `mc`, respondibles de oído; las alternativas en japonés son la misma palabra en formas distintas. La app no las baraja: varía la posición de la correcta.
+- El texto se escribe como en las lecturas (kanji como en la vida real, números en kanji). Las palabras que el camino no enseña van a `vocab_extra.js`.
+
+Para bajar los subtítulos de un episodio (solo el texto, no el video) a `subs/`, que git ignora:
+
+```sh
+yt-dlp --skip-download --write-subs --sub-langs ja --sub-format json3 -P subs -o "%(id)s" -- "https://www.youtube.com/watch?v=ID"
+node tools/check-clips.mjs   # ¿siguen en YouTube los videos y tienen una sola pista de audio?
+```
+
+Cada evento del archivo trae `tStartMs`, `dDurationMs` y el texto, con ruido que hay que quitar: `(quien habla)`, `＜pensamientos＞`, `ーー` y efectos de sonido.
+
 ## Simulacro JLPT N5 (`js/data/exam/`)
 
 El banco está repartido en `gengo.js` (文字・語彙 y 文法), `dokkai.js` (読解) y `chokai.js` (聴解). Cada archivo exporta un objeto `{ tipo: [ítems] }`. Los textos se escriben tokenizados, igual que en las lecciones, y **solo pueden usar palabras que el camino enseña** (el validador lo comprueba). Las instrucciones y preguntas van en japonés, como en el examen real. `why` (en español) se muestra al revisar el resultado. `ref` es la lección que conviene repasar si fallas.
