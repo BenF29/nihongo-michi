@@ -278,7 +278,8 @@ export function romajiToHira(s) {
 const SMALL_V = { 'ゃ': 'a', 'ゅ': 'u', 'ょ': 'o', 'ぁ': 'a', 'ぃ': 'i', 'ぅ': 'u', 'ぇ': 'e', 'ぉ': 'o' };
 const VOWEL_OF = ch => { if (SMALL_V[ch]) return SMALL_V[ch]; const r = toRomaji(ch); return /[aiueo]$/.test(r) ? r.slice(-1) : ''; };
 const LONG = { 'あ': 'a', 'い': 'ie', 'う': 'uo', 'え': 'e', 'お': 'o' };
-const clean = s => toHira(s).replace(/[\s。、．，！？!?.,「」『』…・]/g, '').replace(/を/g, 'お');
+const strip = s => s.replace(/[\s。、．，！？!?.,「」『』…・]/g, '');
+const clean = s => toHira(strip(s)).replace(/を/g, 'お');
 // Forma suelta: ignora la duración de las vocales (こうひい = こひ)
 export function looseKana(s) {
   let out = '', prev = '';
@@ -332,6 +333,46 @@ export function checkAnswer(input, texts) {
   return false;
 }
 export const answerMatches = (input, texts) => !!checkAnswer(input, texts);
+
+// Error pequeño: qué parte de lo escrito no calzó con la forma aceptada más parecida.
+// → { segs: [[texto, malo]], tips: [frases] }, o null si coincide o si el error es grande
+const SMALL = 'ぁぃぅぇぉっゃゅょ';
+const base = c => c.normalize('NFD')[0];
+const lev = (a, b) => {
+  const m = [Array.from({ length: b.length + 1 }, (_, j) => j)];
+  for (let i = 1; i <= a.length; i++) {
+    m[i] = [i];
+    for (let j = 1; j <= b.length; j++) m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] !== b[j - 1]));
+  }
+  return m;
+};
+function subTip(a, b) {
+  const x = toHira(a), y = toHira(b);
+  if (x === y) return '';   // misma letra, distinta vocal larga alrededor: basta con el rojo
+  if (base(x) === base(y)) return `Revisa el dakuten (゛゜): «${a}» debería ser «${b}».`;
+  if (Math.abs(x.charCodeAt(0) - y.charCodeAt(0)) === 1 && (SMALL.includes(x) || SMALL.includes(y))) return `Revisa el tamaño: «${a}» debería ser «${b}».`;
+  return `«${a}» debería ser «${b}».`;
+}
+export function answerDiff(input, texts) {
+  // strictKana cambia cada carácter por otro sin quitar ninguno: se compara normalizado y se muestra lo escrito
+  const u = [...strip(toKanaInput(input))], su = [...strictKana(u.join(''))];
+  let best = null;
+  for (const t of [].concat(texts)) for (const raw of answerForms(t, strip)) {
+    const sf = [...strictKana(raw)];
+    if (Math.abs(sf.length - su.length) > 3) continue;
+    const m = lev(su, sf), d = m[su.length][sf.length];
+    if (!best || d < best.d) best = { d, m, f: [...raw], sf };
+  }
+  if (!best || !best.d || best.sf.length < 2 || best.d > Math.max(1, Math.min(3, best.sf.length / 3 | 0))) return null;
+  const { m, f, sf } = best, segs = [], tips = [];
+  for (let i = su.length, j = sf.length; i || j;) {
+    if (i && j && su[i - 1] === sf[j - 1]) { segs.unshift([u[--i], false]); j--; }
+    else if (i && j && m[i][j] === m[i - 1][j - 1] + 1) { i--; j--; segs.unshift([u[i], true]); tips.unshift(subTip(u[i], f[j])); }
+    else if (i && m[i][j] === m[i - 1][j] + 1) { i--; segs.unshift([u[i], true]); tips.unshift(`Sobra «${u[i]}».`); }
+    else { j--; segs.unshift([BLANK, true]); tips.unshift(SMALL.includes(f[j]) ? `Te faltó la «${f[j]}» pequeña.` : `Te faltó «${f[j]}».`); }
+  }
+  return { segs, tips };
+}
 
 // Clave de palabra para seguimiento (los nombres propios y la puntuación no cuentan)
 export function wordKey(tok) {

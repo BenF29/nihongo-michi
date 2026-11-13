@@ -5,7 +5,7 @@
 // - ninguna forma conjugada (買います, 食べて…) aparece antes de la lección que enseña cómo se forma
 // - cobertura de vocabulario de cada lectura en el punto del camino indicado por `after`
 
-import { ENTRIES, lookup, tokenize, isPunct, inflectionLabel, masuForm, formTaughtIn, checkAnswer, spoken, sayWord } from '../js/dict.js';
+import { ENTRIES, lookup, tokenize, isPunct, inflectionLabel, masuForm, formTaughtIn, checkAnswer, answerDiff, spoken, sayWord } from '../js/dict.js';
 import { KANJI_ALT } from '../js/data/kanji_alt.js';
 import { UNITS, LESSONS, LESSON_INDEX, FORM_TAUGHT } from '../js/data/curriculum.js';
 import { KANJI } from '../js/data/kanji.js';
@@ -30,6 +30,15 @@ for (const id of Object.keys(KANJI_ALT)) if (!ENTRIES[id]) err('kanji_alt', `no 
 console.assert(checkAnswer('その映画は面白くないです', 'その 映画 は おもしろくない=おもしろい です 。') === 'exact'
   && checkAnswer('分かりません', 'わかりません=わかる') === 'exact' && checkAnswer('食べます', 'たべます=食べる') === 'exact'
   && !checkAnswer('面黒いです', 'おもしろい です'), 'kanji alternativo');
+// error pequeño: marca solo lo que no calzó y dice qué faltó; si el error es grande, nada
+{
+  const T = 'わたし は がくせい です 。', red = d => d && d.segs.map(([s, b]) => b ? `[${s}]` : s).join('') + '|' + d.tips.join(' ');
+  const got = [answerDiff('わたしがくせいです', T), answerDiff('watashi wa kakusei desu', T), answerDiff('きって', 'きっぷ'), answerDiff('がこう', 'がっこう'),
+    answerDiff('わたしはがくせいです', T), answerDiff('ねこがすきです', T), answerDiff('<b>', T)].map(red);
+  const want = ['わたし[＿]がくせいです|Te faltó «は».', 'わたしわ[か]くせいです|Revisa el dakuten (゛゜): «か» debería ser «が».', 'きっ[て]|«て» debería ser «ぷ».',
+    'が[＿]こう|Te faltó la «っ» pequeña.', null, null, null];
+  console.assert(got.join('\n') === want.join('\n'), 'answerDiff:\n' + got.join('\n'));
+}
 // las palabras que pasaron de kana a kanji conservan su audio (se pronuncian desde el kana)
 console.assert(spoken('面白くない=おもしろい です') === 'おもしろくないです' && sayWord(lookup('時計')) === 'とけい', 'audio de palabras con id en kana');
 const introducedIn = {};

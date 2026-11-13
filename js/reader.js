@@ -2,10 +2,10 @@
 
 import READINGS from './data/readings.js';
 import { LESSONS, LESSON_INDEX } from './data/curriculum.js';
-import { tokenize, checkAnswer, readingVoice } from './dict.js';
+import { tokenize, checkAnswer, answerDiff, readingVoice } from './dict.js';
 import * as S from './state.js';
 import { speak, stopSpeaking } from './tts.js';
-import { esc, $, $$, jp, rich, spoken, sfx, confetti, romajiToHira, toast } from './ui.js';
+import { esc, diffHtml, $, $$, jp, rich, spoken, sfx, confetti, romajiToHira, toast } from './ui.js';
 import { t } from './uitext.js';
 
 export const LEVELS = {
@@ -193,7 +193,7 @@ export function renderReading(root, id) {
       });
       if (inp) inp.disabled = true;
       btn.remove();
-      $('.rfb', box).innerHTML = `<b>${ok ? '✓ ¡Correcto!' : '✗ No es correcto.'}</b> ${q.t === 'text' && !ok ? `Respuesta aceptada: <span lang="ja">${esc(q.accept[0])}</span>. ` : ''}${rich(q.why || '')}
+      $('.rfb', box).innerHTML = `<b>${ok ? '✓ ¡Correcto!' : '✗ No es correcto.'}</b> ${q.t === 'text' && !ok ? `Respuesta aceptada: <span lang="ja">${esc(q.accept[0])}</span>. ${diffHtml(answerDiff(inp.value, q.accept))} ` : ''}${rich(q.why || '')}
         ${q.ev !== undefined ? `${listen ? '<button class="btn sm ghost play-ev">🔊 Escuchar la parte clave</button>' : ''}<button class="btn sm ghost show-ev">Ver en el texto</button>` : ''}`;
       $('.show-ev', box)?.addEventListener('click', () => { reveal(); highlight(q.ev, true); });
       $('.play-ev', box)?.addEventListener('click', () => playEv(q.ev));

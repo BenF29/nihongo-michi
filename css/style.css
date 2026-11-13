@@ -370,6 +370,7 @@ body[data-view="leccion"], body[data-view="prueba"], body[data-view="repasar"] {
 .jp-in { font-family: var(--jp); }
 .preview { min-height: 1.8rem; text-align: center; font-size: 1.3rem; color: var(--blue); font-family: var(--jp); }
 .fb-n { margin-top: .2rem; font-weight: 700; }
+.miss { background: none; color: var(--bad); font-weight: 800; text-decoration: underline; }
 .use-tiles { margin-top: .4rem; }
 
 /* Lecturas: modo escucha */

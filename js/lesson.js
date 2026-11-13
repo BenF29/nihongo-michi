@@ -9,11 +9,11 @@ import { LESSONS, LESSON_INDEX, UNITS } from './data/curriculum.js';
 import { STEPS } from './data/lessons/index.js';
 import { KANA, splitKana } from './data/kana.js';
 import { KANJI } from './data/kanji.js';
-import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf, checkAnswer, toKanaInput, textReading, looseKana, answerForms, masuForm } from './dict.js';
+import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf, checkAnswer, toKanaInput, textReading, looseKana, answerForms, answerDiff, masuForm } from './dict.js';
 import * as S from './state.js';
 import READINGS from './data/readings.js';
 import { speak, stopSpeaking } from './tts.js';
-import { esc, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, sayBtn, spoken, sfx, POS, romajiOf, closePop } from './ui.js';
+import { esc, diffHtml, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, sayBtn, spoken, sfx, POS, romajiOf, closePop } from './ui.js';
 import { t } from './uitext.js';
 
 // Enunciado de una pregunta: '@clave' usa una plantilla de uitext.js (pasa a japonés con el avance)
@@ -755,7 +755,7 @@ const RENDER = {
         const reading = textReading(tokenize(it.jpText));
         const correct = `${jp(it.jpText)}${/[\u4e00-\u9faf]/.test(it.jpText) ? ` <span class="muted" lang="ja">(${esc(reading)})</span>` : ''}`;
         return { ok: !!r, correct,
-          note: r === 'close' ? `Casi perfecto: revisa las vocales largas. Se escribe ${correct}.` : r === 'exact' && /[a-z]/i.test(inp.value) ? `En japonés: <span lang="ja">${esc(toKanaInput(inp.value.trim()))}</span>` : '' };
+          note: !r ? (it.pat ? '' : diffHtml(answerDiff(inp.value, it.targets))) : r === 'close' ? `Casi perfecto: revisa las vocales largas. Se escribe ${correct}.` : r === 'exact' && /[a-z]/i.test(inp.value) ? `En japonés: <span lang="ja">${esc(toKanaInput(inp.value.trim()))}</span>` : '' };
       },
     };
   },
