@@ -11,6 +11,7 @@
 import { VOCAB } from './data/vocab.js';
 import { VOCAB_EXTRA } from './data/vocab_extra.js';
 import { FORM_TAUGHT } from './data/curriculum.js';
+import { KANJI_ALT } from './data/kanji_alt.js';
 
 export const ENTRIES = {};          // id -> entrada
 const BY_W = {}, BY_R = {};
@@ -80,6 +81,15 @@ export function surfaceReading(surface, e) {
   const rest = surface.slice(i);           // ました
   if (hasKanji(rest)) return '';
   return stemR + rest;
+}
+
+// Inversa de surfaceReading: una forma en kana escrita con la grafía `w` del lema (おもしろくない + 面白い → 面白くない)
+export function kanjiSurface(kana, e, w) {
+  let i = 0;
+  while (i < kana.length && i < e.r.length && kana[i] === e.r[i]) i++;
+  const tail = e.r.slice(i);               // い: la parte del lema que cambió al conjugar
+  if (!i || !w.endsWith(tail)) return '';  // irregular (よくない de いい): no se puede deducir
+  return w.slice(0, w.length - tail.length) + kana.slice(i);
 }
 
 // Alinea furigana: devuelve [[texto, rt|null], ...]
@@ -213,6 +223,8 @@ export function tokSay(t, alone = false) {
   if (t.raw?.includes('|')) return t.reading;
   // un kanji suelto tiene lecturas ambiguas (人: ひと/にん): mejor la lectura en kana
   if (t.reading && t.surface.length === 1 && hasKanji(t.surface)) return t.reading;
+  // palabras con id en kana (面白い, id おもしろい): antes se escribían en kana y sus audios se grabaron desde el kana
+  if (t.reading && t.entry?.id === t.entry?.r && hasKanji(t.surface)) return t.reading;
   return t.surface;
 }
 export function spoken(text) {
@@ -298,7 +310,10 @@ export function answerForms(text, norm = looseKana, cap = 4096) {
   const toks = tokenize(text).filter(t => !t.punct && !t.blank);
   let forms = [''];
   for (const t of toks) {
-    const opts = new Set([t.surface, t.reading || t.surface]);
+    const kana = t.reading || t.surface;
+    const opts = new Set([t.surface, kana]);
+    // la misma palabra con kanji: la del diccionario (たべます → 食べます) y las de KANJI_ALT (おもしろくない → 面白くない)
+    if (t.entry) for (const w of [t.entry.w, ...(KANJI_ALT[t.entry.id] || '').split(' ')]) opts.add(kanjiSurface(kana, t.entry, w) || kana);
     if (t.entry?.pos === 'prt' && PRON[t.surface]) opts.add(PRON[t.surface]);
     if (t.entry?.pos === 'exp' && t.surface.endsWith('は')) opts.add(t.surface.slice(0, -1) + 'わ');   // こんにちは
     const next = [];

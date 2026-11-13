@@ -47,6 +47,7 @@ El contenido vive en `js/data/`:
 | `curriculum.js` | unidades y lecciones: qué kana, kanji y palabras introduce cada una |
 | `vocab.js`, `vocab_extra.js` | diccionario |
 | `kana.js`, `kanji.js` | caracteres con mnemotecnias |
+| `kanji_alt.js` | escrituras con kanji que el corrector también acepta (面白い por おもしろい) |
 | `lessons/uN.js` | los pasos de cada lección |
 | `readings.js` | lecturas y preguntas |
 | `exam/` | banco de preguntas del simulacro N5 |

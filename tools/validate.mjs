@@ -5,7 +5,8 @@
 // - ninguna forma conjugada (買います, 食べて…) aparece antes de la lección que enseña cómo se forma
 // - cobertura de vocabulario de cada lectura en el punto del camino indicado por `after`
 
-import { ENTRIES, lookup, tokenize, isPunct, inflectionLabel, masuForm, formTaughtIn } from '../js/dict.js';
+import { ENTRIES, lookup, tokenize, isPunct, inflectionLabel, masuForm, formTaughtIn, checkAnswer, spoken, sayWord } from '../js/dict.js';
+import { KANJI_ALT } from '../js/data/kanji_alt.js';
 import { UNITS, LESSONS, LESSON_INDEX, FORM_TAUGHT } from '../js/data/curriculum.js';
 import { KANJI } from '../js/data/kanji.js';
 import { KANA } from '../js/data/kana.js';
@@ -24,6 +25,13 @@ for (const e of Object.values(ENTRIES)) if (e.dup) err('vocab', `id duplicado: $
 // la tarjeta de cada verbo muestra su forma ます: todos deben poder generarla
 for (const e of Object.values(ENTRIES)) if (/^v[135]$/.test(e.pos) && !masuForm(e)) err('vocab', `no se puede formar el ます de ${e.w} (${e.pos})`);
 console.assert(['買う', '食べる', '来る', 'する', '帰る'].map(w => masuForm(lookup(w))).join() === '買います,食べます,来ます,します,帰ります', 'masuForm');
+// escrituras alternativas con kanji: el corrector las acepta, también conjugadas
+for (const id of Object.keys(KANJI_ALT)) if (!ENTRIES[id]) err('kanji_alt', `no existe la entrada: ${id}`);
+console.assert(checkAnswer('その映画は面白くないです', 'その 映画 は おもしろくない=おもしろい です 。') === 'exact'
+  && checkAnswer('分かりません', 'わかりません=わかる') === 'exact' && checkAnswer('食べます', 'たべます=食べる') === 'exact'
+  && !checkAnswer('面黒いです', 'おもしろい です'), 'kanji alternativo');
+// las palabras que pasaron de kana a kanji conservan su audio (se pronuncian desde el kana)
+console.assert(spoken('面白くない=おもしろい です') === 'おもしろくないです' && sayWord(lookup('時計')) === 'とけい', 'audio de palabras con id en kana');
 const introducedIn = {};
 for (const l of LESSONS) {
   if (l.later && (l.words?.length || 0) > 12) warn(l.id, `${l.words.length} palabras en el núcleo (el resto va en later)`);

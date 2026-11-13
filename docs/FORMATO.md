@@ -33,7 +33,9 @@ Un token es `superficie[|lectura][=lema][:etiqueta]`:
 
 **Regla de oro (i+1):** en una lección solo pueden aparecer palabras de su `words` o de lecciones anteriores (`words` o `later`); las `later` de la propia lección **no** (el validador lo comprueba). En las unidades de kana, solo kana ya aprendidos.
 
-**Kanji:** escribe una palabra con kanji solo si sus kanji ya se enseñaron (`kanji` en el currículo) o si quieres exponer kanji nuevo: la app muestra furigana automáticamente sobre los kanji que el usuario aún no aprendió. En las unidades 1–3 escribe todo en kana.
+**Kanji:** escribe cada palabra como se ve en la vida real: con kanji si normalmente lo lleva (面白い, 病院, 時計), aunque sus kanji no se enseñen en el camino; la app muestra furigana automáticamente sobre los kanji que el usuario aún no aprendió. Las palabras que casi siempre van en kana (いい, できる, かばん) quedan en kana, y sus kanji se anotan en `kanji_alt.js` para que el corrector los acepte. En las unidades 1–3 escribe todo en kana. El simulacro del examen sigue la escritura del JLPT N5 (おもしろい en kana).
+
+Si cambias la escritura de una palabra ya publicada, conserva su id (6.º campo de la entrada): es la clave del progreso guardado y, si el id es la lectura en kana, el audio se sigue buscando por el kana (no hay que regenerarlo).
 
 ## Lecciones (`js/data/lessons/uN.js`)
 
