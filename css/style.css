@@ -499,5 +499,7 @@ a.node { text-decoration: none; color: inherit; }
 
 /* Textos de la interfaz que ya pasaron a japonés: tocar muestra el español */
 .ui-jp { cursor: help; }
+.es-btn { font: 700 .7rem var(--font); padding: 1px 6px; margin-left: .3em; border: 1px solid var(--line); border-radius: 6px; background: none; color: var(--muted); cursor: pointer; vertical-align: middle; }
+.es-tr { margin-left: .4em; }
 button .ui-jp, a .ui-jp { cursor: inherit; }
 .ui-jp.show-es::after { content: ' · ' attr(title); font-size: .85em; opacity: .75; }

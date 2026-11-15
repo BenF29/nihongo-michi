@@ -13,7 +13,7 @@ import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWor
 import * as S from './state.js';
 import READINGS from './data/readings.js';
 import { speak, stopSpeaking } from './tts.js';
-import { esc, diffHtml, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, sayBtn, spoken, sfx, POS, romajiOf, closePop } from './ui.js';
+import { esc, diffHtml, $, $$, shuffle, pick, hasJp, jp, rich, audioBtn, sayBtn, spoken, sfx, POS, romajiOf, closePop, esHint } from './ui.js';
 import { t } from './uitext.js';
 
 // Enunciado de una pregunta: '@clave' usa una plantilla de uitext.js (pasa a japonés con el avance)
@@ -155,7 +155,7 @@ function fromAuthored(s) {
         opts: s.opts.map((o, i) => ({ key: i, html: hasJp(o) ? jp(o, { plain: true }) : rich(o) })), answer: s.a,
         why: `${jp(s.jp)}${s.why ? '<br>' + rich(s.why) : ''}`, shuffle: true };
     case 'fill':
-      return { kind: 'choice', fill: s.jp, prompt: `<div class="qlabel">${qlab(s.q, 'q.fill')}</div><div class="qjp fillq">${jp(s.jp, { cls: 'mid', blank: '<span class="blank" data-blank>　</span>' })}</div>${s.es ? `<div class="qes small">${rich(s.es)}</div>` : ''}`,
+      return { kind: 'choice', fill: s.jp, prompt: `<div class="qlabel">${qlab(s.q, 'q.fill')}</div><div class="qjp fillq">${jp(s.jp, { cls: 'mid', blank: '<span class="blank" data-blank>　</span>' })}</div>${s.es ? `<div class="qes small">${esHint(rich(s.es))}</div>` : ''}`,
         opts: s.opts.map((o, i) => ({ key: i, html: jp(o, { plain: true }), raw: o })), answer: s.a, why: rich(s.why), shuffle: true,
         after: spoken(s.jp.replace('＿', s.opts[s.a])) };
     case 'build':
@@ -170,7 +170,7 @@ function fromAuthored(s) {
       return qTypeReading(s.jp, s.why ? rich(s.why) : null);
     // Transformar: dada una forma, escribir otra (読む → 読みます)
     case 'transform':
-      return { kind: 'write', prompt: `<div class="qlabel">✍️ ${qlab(s.q)}</div><div class="qjp">${jp(s.jp, { cls: 'big' })} ${audioBtn(s.jp)}</div>${s.es ? `<div class="qes small">${rich(s.es)}</div>` : ''}`,
+      return { kind: 'write', prompt: `<div class="qlabel">✍️ ${qlab(s.q)}</div><div class="qjp">${jp(s.jp, { cls: 'big' })} ${audioBtn(s.jp)}</div>${s.es ? `<div class="qes small">${esHint(rich(s.es))}</div>` : ''}`,
         targets: [s.a, ...(s.alt || [])], jpText: s.a, why: rich(s.why), after: spoken(s.a) };
     case 'error':
       return { kind: 'pick', jpText: s.jp, bad: s.bad, fix: s.fix, es: s.es, why: rich(s.why), after: spoken(s.fix) };
@@ -318,13 +318,20 @@ function buildTestQueue(unit) {
   return pick(q, Math.min(16, q.length));
 }
 
+const GRAMMAR = ['fill', 'transform', 'error', 'build', 'answer'];
 function buildReviewQueue(ids) {
   const pool = [...S.knownWords()].map(id => ENTRIES[id]).filter(Boolean);
   const big = pool.length >= 4 ? pool : [...pool, ...wordsUpTo(LESSONS.length - 1)];
   const gens = [qJpToEs, qEsToJp, qListenWord];
   const p = S.me();
+  // Gramática de lecciones hechas: un ejercicio cada 3 palabras, sacado al azar de sus pasos escritos
+  // shortcut: al azar, sin seguimiento de qué regla se olvida; si hace falta, guardar aciertos por lección
+  const done = LESSONS.filter(l => S.lessonDone(l.id));
+  const gram = pick(done.flatMap(l => (STEPS[l.id] || []).filter(s => GRAMMAR.includes(s.t) && !s.kana)
+    .map(s => s.t === 'build' && LESSON_INDEX[l.id] >= U4 ? qWrite(s) : fromAuthored(s))), Math.ceil(ids.length / 3));
   // Las alternativas se muestran solo después de pensar la respuesta, y se parecen a la correcta
   return ids.flatMap((id, i) => [
+    ...(i % 3 === 2 && gram.length ? [gram.pop()] : []),
     ...(p?.words[id]?.fresh ? [{ kind: 'wordCard', e: ENTRIES[id] }] : []),
     // segundos para elegir una vez vistas las alternativas: leer cuatro opciones en kana toma más que en español
     p?.words[id]?.box >= 3 && i % 2 === 0 ? qWriteWord(ENTRIES[id], id) : { ...gens[i % 3](ENTRIES[id], big, id, true), think: true, secs: gens[i % 3] === qEsToJp ? 6 : 4 }]);
@@ -762,7 +769,7 @@ const RENDER = {
   // Encontrar el error: tocar la palabra que está mal
   pick(it, body, setReady) {
     const toks = tokenize(it.jpText);
-    body.innerHTML = `<div class="q"><div class="qlabel">🔎 ${t('q.error')}</div>${it.es ? `<div class="qes small">«${rich(it.es)}»</div>` : ''}</div>
+    body.innerHTML = `<div class="q"><div class="qlabel">🔎 ${t('q.error')}</div>${it.es ? `<div class="qes small">${esHint(`«${rich(it.es)}»`)}</div>` : ''}</div>
       <div class="err-line">${toks.map((t, k) => t.punct ? `<span lang="ja">${esc(t.surface)}</span>` : `<button class="tile etok" data-k="${k}">${jp(t.raw, { plain: true })}</button>`).join('')}</div>`;
     let sel = null;
     $$('.etok', body).forEach(b => b.onclick = () => {

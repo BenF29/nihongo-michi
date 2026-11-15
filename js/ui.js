@@ -63,6 +63,9 @@ export function jp(text, { cls = '', plain = false, mark = 'none', blank = '', r
   return `<span class="jp${spacing ? ' sp' : ''} ${cls}" lang="ja">${out.join('')}</span>`;
 }
 
+// Traducción de un enunciado en japonés: oculta hasta tocar «ES» (la pregunta se intenta entender primero)
+export const esHint = html => `<button type="button" class="es-btn" aria-label="Ver traducción">ES</button><span class="es-tr" hidden>${html}</span>`;
+
 // Marcado ligero para explicaciones: **negrita**, *cursiva*, {japonés}, saltos de línea
 export function rich(s) {
   if (!s) return '';
@@ -129,6 +132,8 @@ document.addEventListener('click', ev => {
   if (say) { ev.stopPropagation(); speak(say.dataset.say, S.settings().rate, say.dataset.voice); return; }
   const add = ev.target.closest('[data-addword]');
   if (add) { S.addWordToReview(add.dataset.addword); toast('Añadida a tu repaso'); closePop(); document.dispatchEvent(new CustomEvent('words-changed')); return; }
+  const es = ev.target.closest('.es-btn');
+  if (es) { ev.stopPropagation(); es.nextElementSibling.hidden = !es.nextElementSibling.hidden; return; }
   const w = ev.target.closest('.w');
   if (w && !w.closest('.tile') && !w.closest('.opt')) { ev.stopPropagation(); showWord(w); return; }
   if (pop && !ev.target.closest('.pop')) closePop();

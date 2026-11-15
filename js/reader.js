@@ -5,7 +5,7 @@ import { LESSONS, LESSON_INDEX } from './data/curriculum.js';
 import { tokenize, checkAnswer, answerDiff, readingVoice } from './dict.js';
 import * as S from './state.js';
 import { speak, stopSpeaking } from './tts.js';
-import { esc, diffHtml, $, $$, jp, rich, spoken, sfx, confetti, romajiToHira, toast } from './ui.js';
+import { esc, diffHtml, $, $$, jp, rich, spoken, sfx, confetti, romajiToHira, toast, esHint } from './ui.js';
 import { t } from './uitext.js';
 
 export const LEVELS = {
@@ -226,7 +226,7 @@ export function renderReading(root, id) {
 }
 
 export function qHTML(q, i) {
-  const head = `<div class="rq-q"><span class="qn">${i + 1}</span><div>${q.qjp ? `<div>${jp(q.qjp)}</div>` : ''}<div class="${q.qjp ? 'muted' : ''}">${rich(q.q)}</div></div></div>`;
+  const head = `<div class="rq-q"><span class="qn">${i + 1}</span><div>${q.qjp ? `<div>${jp(q.qjp)} <span class="muted">${esHint(rich(q.q))}</span></div>` : `<div>${rich(q.q)}</div>`}</div></div>`;
   let body = '';
   if (q.t === 'mc') body = `<div class="ropts">${q.opts.map((o, k) => `<button class="ro" data-v="${k}">${/[぀-ヿ一-龯]/.test(o) ? jp(o) : rich(o)}</button>`).join('')}</div>`;
   else if (q.t === 'tf') body = `<div class="ropts tf"><button class="ro" data-v="true">Verdadero</button><button class="ro" data-v="false">Falso</button></div>`;
