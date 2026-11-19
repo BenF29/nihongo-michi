@@ -31,6 +31,9 @@ for (const id of Object.keys(KANJI_ALT)) if (!ENTRIES[id]) err('kanji_alt', `no 
 console.assert(checkAnswer('その映画は面白くないです', 'その 映画 は おもしろくない=おもしろい です 。') === 'exact'
   && checkAnswer('分かりません', 'わかりません=わかる') === 'exact' && checkAnswer('食べます', 'たべます=食べる') === 'exact'
   && !checkAnswer('面黒いです', 'おもしろい です'), 'kanji alternativo');
+// vocales largas: se aceptan sus grafías equivalentes, pero la duración cuenta
+console.assert(['こうひい', 'コーヒー', 'koohii'].every(v => checkAnswer(v, 'コーヒー') === 'exact')
+  && !checkAnswer('こひ', 'コーヒー') && !checkAnswer('おばさん', 'おばあさん'), 'vocales largas');
 // error pequeño: marca solo lo que no calzó y dice qué faltó; si el error es grande, nada
 {
   const T = 'わたし は がくせい です 。', red = d => d && d.segs.map(([s, b]) => b ? `[${s}]` : s).join('') + '|' + d.tips.join(' ');

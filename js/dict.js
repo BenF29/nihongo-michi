@@ -273,24 +273,14 @@ export function romajiToHira(s) {
 }
 
 // ───── Corrección de respuestas escritas en japonés ─────
-// Acepta kana, kanji o romaji (se convierte a hiragana). Es tolerante con vocales largas
-// (こうひい / こーひー / koohii), con は/わ, へ/え, を/お en partículas, y con espacios y puntuación.
+// Acepta kana, kanji o romaji (se convierte a hiragana), las grafías equivalentes de una vocal larga
+// (こうひい / こーひー / koohii), は/わ, へ/え, を/お en partículas, y espacios y puntuación.
+// La duración sí cuenta: こひ no es コーヒー (おばさん ≠ おばあさん).
 const SMALL_V = { 'ゃ': 'a', 'ゅ': 'u', 'ょ': 'o', 'ぁ': 'a', 'ぃ': 'i', 'ぅ': 'u', 'ぇ': 'e', 'ぉ': 'o' };
 const VOWEL_OF = ch => { if (SMALL_V[ch]) return SMALL_V[ch]; const r = toRomaji(ch); return /[aiueo]$/.test(r) ? r.slice(-1) : ''; };
-const LONG = { 'あ': 'a', 'い': 'ie', 'う': 'uo', 'え': 'e', 'お': 'o' };
 const strip = s => s.replace(/[\s。、．，！？!?.,「」『』…・]/g, '');
 const clean = s => toHira(strip(s)).replace(/を/g, 'お');
-// Forma suelta: ignora la duración de las vocales (こうひい = こひ)
-export function looseKana(s) {
-  let out = '', prev = '';
-  for (const ch of clean(s)) {
-    if (ch === 'ー') continue;
-    if (LONG[ch] && prev && LONG[ch].includes(prev)) continue;
-    out += ch; prev = VOWEL_OF(ch) || prev;
-  }
-  return out;
-}
-// Forma estricta: distingue vocales largas, pero acepta las grafías equivalentes (ー = vocal, おう = おお, えい = ええ)
+// Forma normalizada: distingue vocales largas, pero acepta las grafías equivalentes (ー = vocal, おう = おお, えい = ええ)
 const VKANA = { a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お' };
 export function strictKana(s) {
   let out = '', prev = '';
@@ -306,8 +296,8 @@ export function toKanaInput(v) {
   return v.replace(/[a-zA-Z'\-]+/g, m => romajiToHira(m));
 }
 const PRON = { 'は': 'わ', 'へ': 'え', 'を': 'お' };
-// Todas las formas aceptables (en forma "suelta") de un texto tokenizado
-export function answerForms(text, norm = looseKana, cap = 4096) {
+// Todas las formas aceptables (normalizadas) de un texto tokenizado
+export function answerForms(text, norm = strictKana, cap = 4096) {
   const toks = tokenize(text).filter(t => !t.punct && !t.blank);
   let forms = [''];
   for (const t of toks) {
@@ -323,14 +313,10 @@ export function answerForms(text, norm = looseKana, cap = 4096) {
   }
   return new Set(forms.map(norm));
 }
-// 'exact' si coincide, 'close' si solo difiere en la duración de alguna vocal, false si no
+// 'exact' si coincide, false si no
 export function checkAnswer(input, texts) {
-  const kana = toKanaInput(input);
-  if (!looseKana(kana)) return false;
-  texts = [].concat(texts);
-  if (texts.some(t => answerForms(t, strictKana).has(strictKana(kana)))) return 'exact';
-  if (texts.some(t => answerForms(t, looseKana).has(looseKana(kana)))) return 'close';
-  return false;
+  const kana = strictKana(toKanaInput(input));
+  return !!kana && [].concat(texts).some(t => answerForms(t).has(kana)) && 'exact';
 }
 export const answerMatches = (input, texts) => !!checkAnswer(input, texts);
 

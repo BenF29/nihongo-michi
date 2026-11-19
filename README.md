@@ -10,7 +10,7 @@ Aplicación web interactiva para aprender japonés desde cero, en español.
   - Ejercicios variados: opción múltiple, completar partículas, armar oraciones con fichas, escuchar (voz sintetizada), unir pares, escribir en romaji y diálogos que se revelan línea a línea.
   - Feedback inmediato que explica *por qué* una respuesta es correcta o no. Las preguntas falladas vuelven al final de la lección.
   - Cada lección usa solo palabras ya enseñadas más las nuevas (i+1), y recicla vocabulario anterior.
-  - **Producción**: desde la unidad 4 las fichas se van retirando y hay que escribir las oraciones en japonés (kana, kanji o romaji, que se convierte solo). Las fichas quedan como ayuda a cambio de menos XP. El corrector acepta kanji o kana y avisa si solo fallaste en una vocal larga.
+  - **Producción**: desde la unidad 4 las fichas se van retirando y hay que escribir las oraciones en japonés (kana, kanji o romaji, que se convierte solo). Las fichas quedan como ayuda a cambio de menos XP. El corrector acepta kanji o kana; una vocal larga de más o de menos cuenta como error, y te marca cuál.
   - **Dictados**: escuchar una oración y escribirla.
   - **⏩ Ya lo sé**: una prueba corta por unidad para saltar lo que ya sabes.
 - **Simulacro JLPT N5**: examen completo con las tres secciones reales (文字・語彙 20 min, 文法・読解 40 min, 聴解), los mismos tipos de problema (もんだい 1–6 y los cuatro del 聴解), sin furigana en los kanji del N5 y con el audio sonando una sola vez. Al final da un puntaje estimado en la escala del JLPT (aprobado: 80/180), el detalle por tipo de problema y qué lecciones repasar. También se puede hacer una sola sección o practicar cada tipo de problema con corrección inmediata.

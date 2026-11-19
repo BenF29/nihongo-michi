@@ -9,7 +9,7 @@ import { LESSONS, LESSON_INDEX, UNITS } from './data/curriculum.js';
 import { STEPS } from './data/lessons/index.js';
 import { KANA, splitKana } from './data/kana.js';
 import { KANJI } from './data/kanji.js';
-import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf, checkAnswer, toKanaInput, textReading, looseKana, answerForms, answerDiff, masuForm } from './dict.js';
+import { ENTRIES, lookup, tokenize, toRomaji, normRomaji, toHira, isKana, sayWord, tokSay, voiceOf, checkAnswer, toKanaInput, textReading, strictKana, answerForms, answerDiff, masuForm } from './dict.js';
 import * as S from './state.js';
 import READINGS from './data/readings.js';
 import { speak, stopSpeaking } from './tts.js';
@@ -756,13 +756,14 @@ const RENDER = {
       check() {
         if (inner) return inner.check();
         // Respuesta libre: basta con que termine en la estructura pedida y tenga algo antes
-        const r = it.pat ? (() => { const k = looseKana(toKanaInput(inp.value)); return [].concat(it.pat).some(pt => [...answerForms(pt)].some(f => k.endsWith(f))) && 'exact'; })()
+        // Cada final se normaliza solo: en toda la frase, el い de いいえ、いません se leería como el de えい (= ええ)
+        const r = it.pat ? (() => { const raw = toKanaInput(inp.value); const ends = new Set([...raw].map((_, i) => strictKana(raw.slice(i)))); return [].concat(it.pat).some(pt => [...answerForms(pt)].some(f => ends.has(f))) && 'exact'; })()
           : checkAnswer(inp.value, it.targets);
         inp.disabled = true; inp.classList.add(r ? 'good' : 'badl');
         const reading = textReading(tokenize(it.jpText));
         const correct = `${jp(it.jpText)}${/[\u4e00-\u9faf]/.test(it.jpText) ? ` <span class="muted" lang="ja">(${esc(reading)})</span>` : ''}`;
         return { ok: !!r, correct,
-          note: !r ? (it.pat ? '' : diffHtml(answerDiff(inp.value, it.targets))) : r === 'close' ? `Casi perfecto: revisa las vocales largas. Se escribe ${correct}.` : r === 'exact' && /[a-z]/i.test(inp.value) ? `En japonés: <span lang="ja">${esc(toKanaInput(inp.value.trim()))}</span>` : '' };
+          note: !r ? diffHtml(answerDiff(inp.value, it.targets)) : /[a-z]/i.test(inp.value) ? `En japonés: <span lang="ja">${esc(toKanaInput(inp.value.trim()))}</span>` : '' };
       },
     };
   },
